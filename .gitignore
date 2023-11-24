@@ -1,5 +1,1 @@
 # Ignore all directories (subdirectories)
-*/
-!data/.gitignore
-!outputs/.gitignore
-
