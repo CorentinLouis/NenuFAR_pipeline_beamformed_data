@@ -52,6 +52,6 @@ class ReadFits_rfimask:
 
             # Perform the final operation
             self.rfimask_level0 = rfilevel0
-            self.rfimask_level1 = numpy.multiply(rfilevel0, ndatabyte[:,:, 0])
-            self.rfimask_level2 = numpy.multiply(rfilevel0, ndatabyte[:,:, 1])
-            self.rfimask_level3 = numpy.multiply(rfilevel0, ndatabyte[:,:, 2])
+            self.rfimask_level1 = ndatabyte[:,:, 0]
+            self.rfimask_level2 = ndatabyte[:,:, 1]
+            self.rfimask_level3 = ndatabyte[:,:, 2]
