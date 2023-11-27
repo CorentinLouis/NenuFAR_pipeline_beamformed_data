@@ -57,14 +57,14 @@ class ReadFits_data:
             datasizemax=2**31-1
             # Case where Stokes data are gathered
             if datasize <= datasizemax:
-                self.data = hdus[3].data
+                self.data = hdus[3].data.T
                 k=0
             # Case where Stokes data are *not* gathered
             else:
                 data = numpy.zeros((ns,nf,nt))
                 for k in range(4):
                     data[k,:,:] = hdus[3+k].data
-                self.data = data
+                self.data = data.T
 
             self.ndata = hdus[4+k].data
             self.time = Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5+k].data, format='sec')
