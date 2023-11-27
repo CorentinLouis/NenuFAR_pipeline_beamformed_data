@@ -28,10 +28,10 @@ def bitarray_to_bytearray(xbit, xsize):
     xbyte = numpy.reshape(
                 numpy.transpose(
                         numpy.reshape(
-                                     [(xbit & 0b10000000) / 128, (xbit & 0b01000000) / 64,
-                                     (xbit & 0b00100000) / 32, (xbit & 0b00010000) / 16,
-                                     (xbit & 0b00001000) / 8, (xbit & 0b00000100) / 4,
-                                     (xbit & 0b00000010) / 2, (xbit & 0b00000001)],
+                                     [(xbit & 0b10000000) // 128, (xbit & 0b01000000) // 64,
+                                     (xbit & 0b00100000) // 32, (xbit & 0b00010000) // 16,
+                                     (xbit & 0b00001000) // 8, (xbit & 0b00000100) // 4,
+                                     (xbit & 0b00000010) // 2, (xbit & 0b00000001) // 1],
                                      (nx8 // 8, 8), order='F'
                                      )
                                 ),
@@ -40,10 +40,11 @@ def bitarray_to_bytearray(xbit, xsize):
     if ndim == 1:
         xbyte = numpy.reshape(xbyte[:nx], xsize[1], order='F')
     elif ndim == 2:
-        xbyte = numpy.reshape(xbyte[:nx], (xsize[2], xsize[1]), order='F')
+        xbyte = numpy.reshape(xbyte[:nx], (xsize[1], xsize[2]), order='F')
     elif ndim == 3:
         xbyte = numpy.reshape(xbyte, (xsize[1], xsize[2], xsize[3]), order='F')
     elif ndim == 4:
-        xbyte = numpy.reshape(xbyte[:nx], (xsize[4], xsize[3], xsize[2], xsize[1]), order='F')
+        xbyte = numpy.reshape(xbyte[:nx], (xsize[1], xsize[2], xsize[3], xsize[4]), order='F')
+
 
     return xbyte
