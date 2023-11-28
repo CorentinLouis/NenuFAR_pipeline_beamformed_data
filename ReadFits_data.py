@@ -66,6 +66,6 @@ class ReadFits_data:
                     data[k,:,:] = hdus[3+k].data
                 self.data = data.T
 
-            self.ndata = hdus[4+k].data
+            self.ndata = hdus[4+k].data.T
             self.time = Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5+k].data, format='sec')
             self.frequency = hdus[6+k].data * u.MHz
