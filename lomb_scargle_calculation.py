@@ -35,6 +35,38 @@ import argparse
 
 
 from h5py import File
+import datetime
+
+
+
+@numpy.vectorize
+def datetime_to_timestamp(datetime_table):
+    ### Function to return time in floating format (from a datetime object)
+    return datetime_table.timestamp()
+
+@numpy.vectorize
+def timestamp_to_datetime(timestamp_table):
+    ### Function to return time in datetime format (from a timestamp object)
+    result = datetime.datetime.fromtimestamp(timestamp_table)
+    return (result)
+
+
+def read_hdf5_file(input_file):
+    """
+    Reads the LS data from an HDF5 file.
+    """
+    with File(input_file, 'r') as file_hdf5:
+        time_timestamp = numpy.array(file_hdf5['Time'])
+        time_datetime = timestamp_to_datetime(time_timestamp)
+        frequency_obs = numpy.array(file_hdf5['Frequency_Obs'])
+        frequency_LS = numpy.array(file_hdf5['Frequency_LS'])
+        power_LS = numpy.array(file_hdf5['power_LS'])
+
+    return(time_datetime,
+            frequency_obs,
+            frequency_LS,
+            power_LS
+            )
 
 
 def save_to_hdf(time,
@@ -47,7 +79,7 @@ def save_to_hdf(time,
                 target,
                 ):
     """
-    Saves the data to disk as a HDF5 file.
+    Saves the data to disk as an HDF5 file.
     """
     output_file = File(output_directory+'lomb_scargle_periodogram_LT'+key_project+'_'+target+'.hdf5', 'w')
     output_file.create_dataset('Time', data = time)
@@ -63,36 +95,52 @@ def save_to_hdf(time,
 def plot_LS_periodogram(frequencies,
                         f_LS,
                         power_LS,
-                        output_directory):
+                        output_directory,
+                        T_exoplanet = 1.769137786,
+                        target = 'Jupiter',
+                        key_project = '07'):
+    """
+    INPUT:
+        - frequencies: Observation frequencies (in MHz)
+        - f_LS: LombScargle frequencies (in Hertz)
+        - power_LS: LombScargle power (shape : n_{frequencies}, n_{f_LS})
+        - T_exoplanet: rotation period (in days) of the exoplanet at which a period should be seen in the periodogram. A vertical line will be plot at this period and half this period
+        - target (str): name of the exoplant.
+    OUTPUT:
+        - png file of LombScargle periodograms (one per value in frequencies), saved in the output_directory directory
+    """
     dpi = 200
-    fig, axs = plt.subplots(nrows=len(frequencies), sharex=True, dpi=dpi)
+    fig, axs = plt.subplots(nrows=len(frequencies), sharex=True, dpi=dpi, figsize = (15,20))
 
-    T_io = 1.769137786
-    T_jupiter = 9.9250/24
-    T_synodique = (T_io*T_jupiter)/abs(T_io-T_jupiter)
+    if target == 'Jupiter':
+        T_io = 1.769137786
+        T_jupiter = 9.9250/24
+        T_synodique = (T_io*T_jupiter)/abs(T_io-T_jupiter)
 
     for index_freq in range(len(frequencies)):
-        
-
         axs[index_freq].plot(1/f_LS[index_freq]/60/60, power_LS[index_freq])
         #plt.yscale('log')
         axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
-        lazy_loader.find_rotation_period_exoplanet()
-        T_exoplanet = lazy_loader.exoplanet_period # in days
-        axs[index_freq].vlines([T_io*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r')
-        axs[index_freq].vlines([T_io*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', linestyles="dashed")
-        axs[index_freq].vlines([T_jupiter*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='g')
-        axs[index_freq].vlines([T_jupiter*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='g', linestyles="dashed")
-        axs[index_freq].vlines([T_synodique*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='y')
-        axs[index_freq].vlines([T_synodique*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='y', linestyles="dashed")
+        if target == 'Jupiter':
+            axs[index_freq].vlines([T_io*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', label = r"$T_{Io}$")
+            axs[index_freq].vlines([T_io*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
+            axs[index_freq].vlines([T_jupiter*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='g',label = r"$T_{Jup}$")
+            axs[index_freq].vlines([T_jupiter*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Io}$")
+            axs[index_freq].vlines([T_synodique*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='y',label = r"$T_{synodic}$")
+            axs[index_freq].vlines([T_synodique*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
+
+        else:
+            axs[index_freq].vlines([T_exoplanet*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', label = r"$T_{{target}}$")
+            axs[index_freq].vlines([T_exoplanet*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{{target}}$")
         axs[index_freq].xaxis.set_minor_locator(MultipleLocator(1))
         axs[index_freq].xaxis.set_major_locator(MultipleLocator(5))
-
+        if index_freq == 0:
+            axs[index_freq].legend()
     axs[index_freq].set_xlim([4,50])
     axs[index_freq].set_xlabel("Periodicity (Hours)")
     plt.tight_layout()
     #plt.show()
-    plt.savefig(output_directory+'lomb_scargle_periodogram_LT'+key_project+'_'+target, dpi = dpi, format = png)
+    plt.savefig(output_directory+'lomb_scargle_periodogram_LT'+key_project+'_'+target+'.png', dpi = dpi, format = 'png')
 
 
 if __name__ == '__main__':
@@ -174,7 +222,15 @@ if __name__ == '__main__':
     power_LS = [result[1] for result in results]
 
     if args.plot_results:
-        plot_LS_periodogram(frequencies, f_LS, power_LS, args.output_directory)
+        lazy_loader.find_rotation_period_exoplanet()
+        T_exoplanet = lazy_loader.exoplanet_period # in days
+        plot_LS_periodogram(frequencies,
+                            frequency_LS,
+                            power_LS,
+                            args.output_directory,
+                            T_exoplanet = T_exoplanet,
+                            target = args.target,
+                            key_project = args.key_project)
 
     if args.save_as_hdf5:
         save_to_hdf(time,
