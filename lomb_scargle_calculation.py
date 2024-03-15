@@ -61,11 +61,18 @@ def read_hdf5_file(input_file):
         frequency_obs = numpy.array(file_hdf5['Frequency_Obs'])
         frequency_LS = numpy.array(file_hdf5['Frequency_LS'])
         power_LS = numpy.array(file_hdf5['power_LS'])
+        key_project = file_hdf5['key_project'][()].decode('utf-8')
+        target = file_hdf5['Target'][()].decode('utf-8')
+        T_exoplanet = file_hdf5['T_exoplanet'][()]
+    
 
     return(time_datetime,
             frequency_obs,
             frequency_LS,
-            power_LS
+            power_LS,
+            key_project,
+            target,
+            T_exoplanet
             )
 
 
@@ -77,20 +84,25 @@ def save_to_hdf(time,
                 output_directory,
                 key_project,
                 target,
-                ):
+                T_exoplanet,
+                extra_name = ''):
     """
     Saves the data to disk as an HDF5 file.
     """
-    output_file = File(output_directory+'lomb_scargle_periodogram_LT'+key_project+'_'+target+'.hdf5', 'w')
-    output_file.create_dataset('Time', data = time)
-    output_file['Time'].attrs.create('format', 'unix')
-    output_file['Time'].attrs.create('units', 's')
-    output_file.create_dataset('Frequency_Obs', data=frequency_obs)
-    output_file['Frequency_Obs'].attrs.create('units', 'MHz')
-    output_file.create_dataset('Frequency_LS', data=frequency_LS)
-    output_file['Frequency_LS'].attrs.create('units', 's')
-    output_file.create_dataset('power_LS', data=power_LS)
-    output_file.close()
+    with File(output_directory+'lomb_scargle_periodogram_LT'+key_project+'_'+target+extra_name+'.hdf5', 'w') as output_file:
+        output_file.create_dataset('Time', data = time)
+        output_file['Time'].attrs.create('format', 'unix')
+        output_file['Time'].attrs.create('units', 's')
+        output_file.create_dataset('Frequency_Obs', data=frequency_obs)
+        output_file['Frequency_Obs'].attrs.create('units', 'MHz')
+        output_file.create_dataset('Frequency_LS', data=frequency_LS)
+        output_file['Frequency_LS'].attrs.create('units', 's')
+        output_file.create_dataset('power_LS', data=power_LS)
+        
+        output_file.create_dataset('key_project', data=key_project)
+        output_file.create_dataset('Target', data=target)
+        output_file.create_dataset('T_exoplanet', data=T_exoplanet)
+        output_file['T_exoplanet'].attrs.create('units', 'h')
 
 def plot_LS_periodogram(frequencies,
                         f_LS,
@@ -98,7 +110,8 @@ def plot_LS_periodogram(frequencies,
                         output_directory,
                         T_exoplanet = 1.769137786,
                         target = 'Jupiter',
-                        key_project = '07'):
+                        key_project = '07',
+                        figsize = (15,20)):
     """
     INPUT:
         - frequencies: Observation frequencies (in MHz)
@@ -110,7 +123,7 @@ def plot_LS_periodogram(frequencies,
         - png file of LombScargle periodograms (one per value in frequencies), saved in the output_directory directory
     """
     dpi = 200
-    fig, axs = plt.subplots(nrows=len(frequencies), sharex=True, dpi=dpi, figsize = (15,20))
+    fig, axs = plt.subplots(nrows=len(frequencies), sharex=True, dpi=dpi, figsize = figsize)
 
     if target == 'Jupiter':
         T_io = 1.769137786
@@ -150,7 +163,7 @@ if __name__ == '__main__':
     parser.add_argument('--main_directory_path', dest = 'root', default = './data/', type = str, help = "Main directory path where the observation are stored")
     parser.add_argument('--stokes', dest = 'stokes', default = 'V', type = str, help = "Stokes parameter to be study")
     parser.add_argument('--apply_rfi_mask', dest = 'apply_rfi_mask', default = False, action = 'store_true', help = "Apply RFI mask")
-    parser.add_argument('--rfi_mask_level', dest = 'rfi_mask_level', default = 0, type = int, help = "Level of the RFI mask to apply (needed if --apply_rfi_mask True). Option are 0, 1, 2, or 3")
+    parser.add_argument('--rfi_mask_level', dest = 'rfi_mask_level', default = None, type = int, help = "Level of the RFI mask to apply (needed if --apply_rfi_mask True). Option are 0, 1, 2, or 3")
     parser.add_argument('--rfi_mask_level0_percentage', dest = 'rfi_mask_level0_percentage', default = 10, type = float, help = "Percentage (i.e. threshold) of the RFI mask level to apply (needed if --apply_rfi_mask True and rfi_mask_level is 0). Values can be between 0 and 100 %")
     parser.add_argument('--interpolation_in_time', dest = 'interpolation_in_time', default = False, action = 'store_true', help = "Interpolate in time")
     parser.add_argument('--interpolation_in_time_value', dest = 'interpolation_in_time_value', default = 1, type = float, help = "Value in second over which data need to be interpolated")
@@ -162,82 +175,113 @@ if __name__ == '__main__':
     
     parser.add_argument('--save_as_hdf5', dest = 'save_as_hdf5', default = False, action = 'store_true', help = "To save results in an hdf5 file")
     parser.add_argument('--plot_results', dest = 'plot_results', default = False, action = 'store_true', help = "To plot and save results")
+    parser.add_argument("--figsize", dest = 'figsize', nargs = 2, type = int, default = (15,20), help = "Figure size")
+
+    parser.add_argument('--plot_only', dest = 'plot_only', default = False, action = 'store_true', help = "Set this as True if you only want to plot the results from pre-calculated data stored in an hdf5 file")
+    parser.add_argument('--input_hdf5_file', dest = 'input_hdf5_file', default = None, type = str, help = "HDF5 file path containing pre-calculated data. Required if --plot_only is set as True")
+    
     parser.add_argument('--output_directory', dest = 'output_directory', default = './', type = str, help = "Output directory where to save hdf5 and/or plots")
     
     args = parser.parse_args()
 
-    
-    # Searching for files
-    #key_project = '07'
-    #target = 'JUPITER'
-    level_of_preprocessed = ''
+    if args.plot_only == False:
+        level_of_preprocessed = ''
 
-    if args.key_project == '07':
-        sub_path = "*/*/*/"
-    else:
-        sub_path = "*/*/*/*/"
+        if args.key_project == '07':
+            sub_path = "*/*/*/"
+        else:
+            sub_path = "*/*/*/*/"
 
-    data_fits_file_paths = [
-                filename
-                for filename in glob.iglob(
-                    f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*spectra*.fits',
-                    recursive=True
-                )
-            ]
+        data_fits_file_paths = [
+                    filename
+                    for filename in glob.iglob(
+                        f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*spectra*.fits',
+                        recursive=True
+                    )
+                ]
 
-    rfi_fits_file_paths = [
-                filename
-                for filename in glob.iglob(
-                    f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*rfi*.fits',
-                    recursive=True
-                )
-            ] 
+        rfi_fits_file_paths = [
+                    filename
+                    for filename in glob.iglob(
+                        f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*rfi*.fits',
+                        recursive=True
+                    )
+                ] 
 
-    lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
-                                args.target
-                            )
-    
-
-    time, frequencies, data_final = lazy_loader.get_dask_array(
-        frequency_interval=args.frequency_interval,
-        stokes = args.stokes,
-        apply_rfi_mask=args.apply_rfi_mask,
-        rfi_mask_level=args.rfi_mask_level,
-        rfi_mask_level0_percentage = args.rfi_mask_level0_percentage,
-        interpolation_in_time = args.interpolation_in_time,
-        interpolation_in_time_value = args.interpolation_in_time_value,
-        interpolation_in_frequency = args.interpolation_in_frequency,
-        interpolation_in_frequency_value = args.interpolation_in_frequency_value,
-        verbose = args.verbose,
-        log_infos = args.log_infos
-    )
-
-
-    args_list = [(lazy_loader, index_freq, time, data_final, False) for index_freq in range(len(frequencies))]
+        lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
+                                    args.target
+                                )
         
-    with multiprocessing.Pool() as pool:
-        results = pool.map(calculate_LS, args_list)
 
-    f_LS = [result[0] for result in results]
-    power_LS = [result[1] for result in results]
+        time, frequencies, data_final = lazy_loader.get_dask_array(
+            frequency_interval=args.frequency_interval,
+            stokes = args.stokes,
+            apply_rfi_mask=args.apply_rfi_mask,
+            rfi_mask_level=args.rfi_mask_level,
+            rfi_mask_level0_percentage = args.rfi_mask_level0_percentage,
+            interpolation_in_time = args.interpolation_in_time,
+            interpolation_in_time_value = args.interpolation_in_time_value,
+            interpolation_in_frequency = args.interpolation_in_frequency,
+            interpolation_in_frequency_value = args.interpolation_in_frequency_value,
+            verbose = args.verbose,
+            log_infos = args.log_infos
+        )
 
-    if args.plot_results:
+
+        args_list = [(lazy_loader, index_freq, time, data_final, False) for index_freq in range(len(frequencies))]
+            
+        with multiprocessing.Pool() as pool:
+            results = pool.map(calculate_LS, args_list)
+
+        f_LS = [result[0] for result in results]
+        power_LS = [result[1] for result in results]
+
+
         lazy_loader.find_rotation_period_exoplanet()
         T_exoplanet = lazy_loader.exoplanet_period # in days
-        plot_LS_periodogram(frequencies,
+
+
+        if args.save_as_hdf5:
+            extra_name = ''
+            if args.apply_rfi_mask != None:
+                if args.apply_rfi_mask == 0:
+                    extra_name = '_masklevel'+str(rfi_mask_level)+'_'+str(rfi_mask_level0_percentage)+'percents'
+                else:
+                    extra_name = '_masklevel'+str(rfi_mask_level)
+            else:
+                extra_name = '_nomaskapplied'
+            save_to_hdf(time,
+                    frequencies,
+                    data_final,
+                    f_LS,
+                    power_LS,
+                    args.output_directory,
+                    args.key_project,
+                    args.target,
+                    T_exoplanet,
+                    extra_name = extra_name)
+
+        if args.plot_results:
+            plot_LS_periodogram(frequencies,
+                                f_LS,
+                                power_LS,
+                                args.output_directory,
+                                T_exoplanet = T_exoplanet,
+                                target = args.target,
+                                key_project = args.key_project,
+                                figsize = args.figsize)
+
+       
+    if args.plot_only:
+        if args.input_hdf5_file == None:
+            raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --plot_only is set as True")
+        
+        (time_datetime, frequency_obs, frequency_LS, power_LS, key_project, target, T_exoplanet) = read_hdf5_file(args.input_hdf5_file)
+        plot_LS_periodogram(frequency_obs,
                             frequency_LS,
                             power_LS,
                             args.output_directory,
                             T_exoplanet = T_exoplanet,
-                            target = args.target,
-                            key_project = args.key_project)
-
-    if args.save_as_hdf5:
-        save_to_hdf(time,
-                frequencies,
-                data_final,
-                f_LS,
-                power_LS,
-                args.output_directory,
-                args.key_project,
-                args.target)
+                            target = target,
+                            key_project = key_project,
+                            figsize = args.figsize)
