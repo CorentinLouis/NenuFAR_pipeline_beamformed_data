@@ -245,9 +245,9 @@ if __name__ == '__main__':
             extra_name = ''
             if args.apply_rfi_mask != None:
                 if args.apply_rfi_mask == 0:
-                    extra_name = '_masklevel'+str(rfi_mask_level)+'_'+str(rfi_mask_level0_percentage)+'percents'
+                    extra_name = '_masklevel'+str(args.rfi_mask_level)+'_'+str(args.rfi_mask_level0_percentage)+'percents'
                 else:
-                    extra_name = '_masklevel'+str(rfi_mask_level)
+                    extra_name = '_masklevel'+str(args.rfi_mask_level)
             else:
                 extra_name = '_nomaskapplied'
             save_to_hdf(time,
