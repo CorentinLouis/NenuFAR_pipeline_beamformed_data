@@ -92,7 +92,7 @@ def save_to_hdf(time,
     """
     Saves the data to disk as an HDF5 file.
     """
-    with File(output_directory+'lomb_scargle_periodogram_Stokes-'+stokes+'_LT'+key_project+'_'+target+extra_name+'.hdf5', 'w') as output_file:
+    with File(output_directory+'lomb_scargle_periodogram_Stokes-'+stokes[0]+'_LT'+key_project+'_'+target+extra_name+'.hdf5', 'w') as output_file:
         output_file.create_dataset('Time', data = time)
         output_file['Time'].attrs.create('format', 'unix')
         output_file['Time'].attrs.create('units', 's')
