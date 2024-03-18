@@ -307,7 +307,10 @@ class LazyFITSLoader:
         self.interpolation_in_time_value = interpolation_in_time_value
         self.interpolation_in_frequency = interpolation_in_frequency
         self.interpolation_in_frequency_value = interpolation_in_frequency_value
+        self.stokes = stokes
 
+
+        stokes = stokes[0]
 
         #if len(i_frequency) == 1:
         #    i_frequency = [i_frequency[0],i_frequency[0]+1]
@@ -318,7 +321,9 @@ class LazyFITSLoader:
             'I': 0,
             'Q': 1,
             'U': 2,
-            'V': 3
+            'V': 3,
+            'V+':3,
+            'V-':3
         }
         
         lazy_object_data = self._load_data_from_fits(log_infos=log_infos)
@@ -527,6 +532,10 @@ class LazyFITSLoader:
         w2 = 2*numpy.pi/T2      # Pulsation min
         #f_LS = numpy.logspace(numpy.log10(w2), numpy.log10(w1), nout)  / (2 * numpy.pi) #Frequencies at which to search for periodicity with LombScargle
         f_LS = numpy.linspace(w2, w1, nout)  / (2 * numpy.pi) #Frequencies at which to search for periodicity with LombScargle
+        if self.stokes == 'V+':
+            data[data < 0] = 0
+        if self.stokes == 'V-':
+            data[data > 0] = 0
         power_LS = lombscargle(time, data, f_LS, normalize=normalized_LS)
 
         return f_LS, power_LS
