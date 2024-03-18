@@ -66,10 +66,10 @@ class LazyFITSLoader:
         """
         
         exoplanet_period = {
-                            'AD Leo': 2.23,
-                            'Jupiter':1.7708333333333333 # period of Io, that's what we're looking for (and not droids...)
+                            'AD_LEO': 2.23,
+                            'JUPITER':1.7708333333333333 # period of Io, that's what we're looking for (and not droids...)
                             }
-        self.exoplanet_period = exoplanet_period[self.exoplanet_name]
+        self.exoplanet_period = exoplanet_period[self.exoplanet_name.upper()]
 
     def _load_data_from_fits(self, log_infos = False):
         """
