@@ -85,9 +85,9 @@ class LazyFITSLoader:
         rfi_mask0 = []
 
         # loading data fits file per fits file
-        for fits_file_path in self.data_fits_file_paths:
+        for count, fits_file_path in enumerate(self.data_fits_file_paths):
             if log_infos:
-                log.info("Start loading data")
+                log.info(f"Start loading data, file {count+1} / {len(self.data_fits_file_paths)}")
             with fits.open(fits_file_path, memmap=True) as hdus:
                 #command = hdus[0].data
                 #param = hdus[1].data
@@ -104,7 +104,7 @@ class LazyFITSLoader:
                 datasizemax = 2**31 - 1
                 
                 if log_infos:
-                    log.info("Start testing fits file")
+                    log.info(f"Start testing fits file {count+1} / {len(self.data_fits_file_paths)}")
                 
                 if datasize <= datasizemax:
                     data_ = da.from_array(hdus[3].data.T, chunks=(chunk_size_time, chunk_size_frequency, chunk_size_stokes))
@@ -116,10 +116,10 @@ class LazyFITSLoader:
                     data_ = data_.T
                 
                 if log_infos:
-                    log.info("End testing fits file")
+                    log.info(f"End testing fits file {count+1} / {len(self.data_fits_file_paths)}")
 
                 if log_infos:
-                    log.info("Start computing time & Frequency")
+                    log.info(f"Start computing time & Frequency, file {count+1} / {len(self.data_fits_file_paths)}")
 
                 rfilevel0_ = da.from_array(hdus[4 + k].data.T, chunks=(chunk_size_time, chunk_size_frequency))
                 time_ = da.from_array((Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5 + k].data, format='sec')).value, chunks = chunk_size_time)
@@ -129,7 +129,7 @@ class LazyFITSLoader:
                 frequency_ = da.from_array((hdus[6 + k].data * u.MHz).value, chunks=chunk_size_frequency)
                 
                 if log_infos:
-                    log.info("End computing time & Frequency")
+                    log.info(f"End computing time & Frequency, file {count+1} / {len(self.data_fits_file_paths)}")
 
                 if self.interpolation_in_time:
                     #new_interval = (time_[1]-time_[0])*self.interpolation_in_time_factor
@@ -146,7 +146,7 @@ class LazyFITSLoader:
                     rfi_mask0.append(rfilevel0_)
 
             if log_infos:
-                log.info("End loading data")
+                log.info(f"End loading data, file {count+1} / {len(self.data_fits_file_paths)}")
 
         return time, time_interp, frequency, data, rfi_mask0
 
@@ -163,7 +163,10 @@ class LazyFITSLoader:
         if log_infos:
             log.info("Start reading mask level > 0")
             
-        for fits_file_path in self.rfi_fits_file_paths:
+        for count, fits_file_path in enumerate(self.rfi_fits_file_paths):
+            if log_infos:
+                log.info(f"Start reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
+            
             with fits.open(fits_file_path, memmap=True) as hdus:
                 ndatasize = hdus[2].data
                 ndatabit = da.from_array(hdus[3].data, chunks=(ndatasize[1]))
@@ -183,7 +186,10 @@ class LazyFITSLoader:
                     rfi_mask.append(rfimask_level2_)
                 elif self.rfi_mask_level == 3:
                     rfi_mask.append(rfimask_level3_)
-        
+
+            if log_infos:
+                log.info(f"End reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
+
         if log_infos:
             log.info("End reading mask > 0")
 
@@ -255,16 +261,20 @@ class LazyFITSLoader:
 
         numerator = da.from_array(interpolated_values1, chunks=(len(time_interp))) 
         denominator = da.from_array(interpolated_values2, chunks=(len(time_interp)))
-        
-        result = da.zeros(len(time_interp))
 
-        for i_elements in range(len(denominator)):
-            if denominator[i_elements] != 0:
-                result[i_elements] = numerator[i_elements] / denominator[i_elements]
-            else:
-                result[i_elements] = numpy.nan
+        result = self.safe_divide(numerator, denominator)
         
         return result
+
+    def safe_divide(self, numerator, denominator):
+        def divide_chunk(numerator_chunk, denominator_chunk):
+            result_chunk = numpy.empty_like(numerator_chunk, dtype=float)
+            zero_mask = denominator_chunk == 0
+            #result_chunk[zero_mask] = numpy.nan
+            result_chunk[~zero_mask] = numerator_chunk[~zero_mask] / denominator_chunk[~zero_mask]
+            return result_chunk
+
+        return da.map_blocks(divide_chunk, numerator, denominator, dtype=float)
 
 
     def get_dask_array(self, frequency_interval = [4,5], stokes='I',
@@ -348,11 +358,10 @@ class LazyFITSLoader:
             w_frequency = numpy.where((frequencies[i_obs] >= frequency_interval[0]) & (frequencies[i_obs] <= frequency_interval[1]))[0]
         
             if self.apply_rfi_mask == True:
-    # not implemented and tested yet in the case where users is asking for both time_interpolation and apply_rfi_mask
                 rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
-                #if self.rfi_mask_level == 0:
-                #    rfi_mask_to_apply[rfi_mask_to_apply >= self.rfi_mask_level0_percentage/100] = 1
-                #    rfi_mask_to_apply[rfi_mask_to_apply < self.rfi_mask_level0_percentage/100] = 0
+                if self.rfi_mask_level == 0:
+                    rfi_mask_to_apply[rfi_mask_to_apply >= self.rfi_mask_level0_percentage/100] = 1
+                    rfi_mask_to_apply[rfi_mask_to_apply < self.rfi_mask_level0_percentage/100] = 0
                 if stokes != 'L':
                     if self.interpolation_in_time:
                         chunk_size_time_interp = len(time_interp_[i_obs])
