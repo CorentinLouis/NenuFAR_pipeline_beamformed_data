@@ -355,102 +355,99 @@ class LazyFITSLoader:
             # Interpolation in time and mask applying is done obs. per obs.    
             if log_infos:
                 log.info(f"Starting {i_obs+1} / {len(time_)} observation")
+            
             w_frequency = numpy.where((frequencies[i_obs] >= frequency_interval[0]) & (frequencies[i_obs] <= frequency_interval[1]))[0]
-        
-            if self.apply_rfi_mask == True:
-                rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
-                if self.rfi_mask_level == 0:
-                    rfi_mask_to_apply[rfi_mask_to_apply >= self.rfi_mask_level0_percentage/100] = 1
-                    rfi_mask_to_apply[rfi_mask_to_apply < self.rfi_mask_level0_percentage/100] = 0
-                if stokes != 'L':
-                    if self.interpolation_in_time:
-                        chunk_size_time_interp = len(time_interp_[i_obs])
-                        data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
-                        for count, index_frequency in enumerate(w_frequency):
-                            data_tmp_[:, count] = da.map_blocks(
-                                                    self.lazy_interpolate_with_rfi_mask,
-                                                    time_interp_[i_obs],
-                                                    time_[i_obs],
-                                                    data_[i_obs][:, index_frequency, stokes_index[stokes]].rechunk((time_[i_obs].chunks[0])),
-                                                    rfi_mask_to_apply[:,count],
-                                                    axis = 0,
-                                                    dtype=float   
-                                                    )
-                    else:
-                        data_tmp_ = self._multiply_data(data_[i_obs][:, w_frequency,  stokes_index[stokes]], rfi_mask_to_apply)                
-                else:
-                    data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
-                    if self.interpolation_in_time:
-                        for count, index_frequency in enumerate(w_frequency):
+            if len(w_frequency) != 0:
+                if self.apply_rfi_mask == True:
+                    rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
+                    if self.rfi_mask_level == 0:
+                        rfi_mask_to_apply[rfi_mask_to_apply >= self.rfi_mask_level0_percentage/100] = 1
+                        rfi_mask_to_apply[rfi_mask_to_apply < self.rfi_mask_level0_percentage/100] = 0
+                    if stokes != 'L':
+                        if self.interpolation_in_time:
                             chunk_size_time_interp = len(time_interp_[i_obs])
                             data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
-                            data_tmp_[:, count] = da.map_blocks(
-                                                    self.lazy_interpolate_with_rfi_mask,
-                                                    time_interp_[i_obs],
-                                                    time_[i_obs],
-                                                    data_stokes_L[:, count].rechunk((time_[i_obs].chunks[0])),
-                                                    rfi_mask_to_apply[:,count],
-                                                    axis = 0,
-                                                    dtype=float   
-                                                    )
+                            for count, index_frequency in enumerate(w_frequency):
+                                data_tmp_[:, count] = da.map_blocks(
+                                                        self.lazy_interpolate_with_rfi_mask,
+                                                        time_interp_[i_obs],
+                                                        time_[i_obs],
+                                                        data_[i_obs][:, index_frequency, stokes_index[stokes]].rechunk((time_[i_obs].chunks[0])),
+                                                        rfi_mask_to_apply[:,count],
+                                                        axis = 0,
+                                                        dtype=float   
+                                                        )
+                        else:
+                            data_tmp_ = self._multiply_data(data_[i_obs][:, w_frequency,  stokes_index[stokes]], rfi_mask_to_apply)                
                     else:
-                        data_tmp_ = self._multiply_data(data_tmp_, rfi_mask_to_apply)
-                                            
-            else:
-                if stokes != 'L':
-                # This part works!
-                    if self.interpolation_in_time:
-                        chunk_size_time_interp = len(time_interp_[i_obs])
-                        data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
+                        data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                        if self.interpolation_in_time:
+                            for count, index_frequency in enumerate(w_frequency):
+                                chunk_size_time_interp = len(time_interp_[i_obs])
+                                data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
+                                data_tmp_[:, count] = da.map_blocks(
+                                                        self.lazy_interpolate_with_rfi_mask,
+                                                        time_interp_[i_obs],
+                                                        time_[i_obs],
+                                                        data_stokes_L[:, count].rechunk((time_[i_obs].chunks[0])),
+                                                        rfi_mask_to_apply[:,count],
+                                                        axis = 0,
+                                                        dtype=float   
+                                                        )
+                        else:
+                            data_tmp_ = self._multiply_data(data_tmp_, rfi_mask_to_apply)
+                                                
+                else:
+                    if stokes != 'L':
+                    # This part works!
+                        if self.interpolation_in_time:
+                            chunk_size_time_interp = len(time_interp_[i_obs])
+                            data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
 
-                    # This part is commented, because the rebinning (instaed of interpolating) needs to be tested and double checked
-                        #data_tmp_ = da.map_blocks(
-                        #                        lazy_rebin,
-                        #                        data_[i_obs][:, i_frequency,0],
-                        #                        new_time=time_interp_[i_obs],
-                        #                        new_time_chunks=(time_interp_[i_obs].size),
-                        #                        dtype=float
-                        #                        )
-                        
-                        for count, index_frequency in enumerate(w_frequency):
-                            data_tmp_[:,count] = da.map_blocks(
-                                                    self.lazy_interp,
-                                                    time_interp_[i_obs],
-                                                    time_[i_obs],
-                                                    data_[i_obs][:, index_frequency, stokes_index[stokes]].rechunk((time_[i_obs].chunks[0])),
-                                                    axis = 0,
-                                                    dtype=float                 
-                                                    )
+                        # This part is commented, because the rebinning (instaed of interpolating) needs to be tested and double checked
+                            #data_tmp_ = da.map_blocks(
+                            #                        lazy_rebin,
+                            #                        data_[i_obs][:, i_frequency,0],
+                            #                        new_time=time_interp_[i_obs],
+                            #                        new_time_chunks=(time_interp_[i_obs].size),
+                            #                        dtype=float
+                            #                        )
                             
-                    else:
-                        data_tmp_ = data_[i_obs][:, w_frequency,  stokes_index[stokes]]
+                            for count, index_frequency in enumerate(w_frequency):
+                                data_tmp_[:,count] = da.map_blocks(
+                                                        self.lazy_interp,
+                                                        time_interp_[i_obs],
+                                                        time_[i_obs],
+                                                        data_[i_obs][:, index_frequency, stokes_index[stokes]].rechunk((time_[i_obs].chunks[0])),
+                                                        axis = 0,
+                                                        dtype=float                 
+                                                        )
+                                
+                        else:
+                            data_tmp_ = data_[i_obs][:, w_frequency,  stokes_index[stokes]]
+                    
+                    if stokes == 'L':
+                        data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                        if self.interpolation_in_time:
+                            chunk_size_time_interp = len(time_interp_[i_obs])
+                            data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
+                            for count, index_frequency in enumerate(w_frequency):
+                                data_tmp_[:,count] = da.map_blocks(
+                                                        self.lazy_interp,
+                                                        time_interp_[i_obs],
+                                                        time_[i_obs],
+                                                        data_stokes_L[:, count].rechunk((time_[i_obs].chunks[0])),
+                                                        axis = 0,
+                                                        dtype=float                 
+                                                        )
+                        else:
+                            data_tmp_ = data_stokes_L
+                    
+                data_final_.append(data_tmp_)
+                if self.apply_rfi_mask == True:
+                    rfi_mask_tmp_.append(rfi_mask_to_apply)
+                frequency_final_.append(frequencies[i_obs][w_frequency])
                 
-                if stokes == 'L':
-                    data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
-                    if self.interpolation_in_time:
-                        chunk_size_time_interp = len(time_interp_[i_obs])
-                        data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
-                        for count, index_frequency in enumerate(w_frequency):
-                            data_tmp_[:,count] = da.map_blocks(
-                                                    self.lazy_interp,
-                                                    time_interp_[i_obs],
-                                                    time_[i_obs],
-                                                    data_stokes_L[:, count].rechunk((time_[i_obs].chunks[0])),
-                                                    axis = 0,
-                                                    dtype=float                 
-                                                    )
-                    else:
-                        data_tmp_ = data_stokes_L
-                   
-                        
-            
-            
-            
-            data_final_.append(data_tmp_)
-            if self.apply_rfi_mask == True:
-                rfi_mask_tmp_.append(rfi_mask_to_apply)
-            frequency_final_.append(frequencies[i_obs][w_frequency])
-            
             if log_infos:
                 log.info(f"Ending {i_obs+1} / {len(time_)} observation")
         
