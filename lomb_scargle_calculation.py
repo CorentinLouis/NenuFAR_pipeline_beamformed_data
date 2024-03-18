@@ -117,7 +117,8 @@ def plot_LS_periodogram(frequencies,
                         target = 'Jupiter',
                         key_project = '07',
                         figsize = (15,20),
-                        extra_name = ''):
+                        extra_name = '',
+                        filename = None):
     """
     INPUT:
         - frequencies: Observation frequencies (in MHz)
@@ -155,17 +156,21 @@ def plot_LS_periodogram(frequencies,
         axs[index_freq].xaxis.set_major_locator(MultipleLocator(5))
         if index_freq == 0:
             axs[index_freq].legend()
-    axs[index_freq].set_xlim([4,50])
+    axs[index_freq].set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
     axs[index_freq].set_xlabel("Periodicity (Hours)")
     plt.tight_layout()
     #plt.show()
-    plt.savefig(output_directory+'lomb_scargle_periodogram_Stokes-'+stokes+'_LT'+key_project+'_'+target+extra_name+'.png', dpi = dpi, format = 'png')
-
+    if filename == None:
+        filename = 'lomb_scargle_periodogram_Stokes-'+stokes+'_LT'+key_project+'_'+target+extra_name
+    else:
+        filename = filename.split('.')[0]
+    plt.savefig(output_directory+filename+'.png', dpi = dpi, format = 'png')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "Calculation of Lomb Scargle Periodogram for observations of a given radio emitter (planet, exoplanet or star)")
     parser.add_argument('-key_project', dest = 'key_project', required = True, type = str, help = "NenuFAR Key Project number (02, or 07)")
-    parser.add_argument('-target', dest = 'target', required = True, type = str, help = "Observation Target Name (planet, exoplanet or star )")
+    parser.add_argument('-target', dest = 'target', required = True, type = str, help = "Observation Target Name (planet, exoplanet or star)")
+    parser.add_argument('--level_processing', dest = 'level_processing', type = str, default = 'L1', help = "Level of processing to be used")
     parser.add_argument('--main_directory_path', dest = 'root', default = './data/', type = str, help = "Main directory path where the observation are stored")
     parser.add_argument('--stokes', dest = 'stokes', default = 'V', type = str, help = "Stokes parameter to be study")
     parser.add_argument('--apply_rfi_mask', dest = 'apply_rfi_mask', default = False, action = 'store_true', help = "Apply RFI mask")
@@ -196,7 +201,7 @@ if __name__ == '__main__':
         if args.key_project == '07':
             sub_path = "*/*/*/"
         else:
-            sub_path = "*/*/*/*/"
+            sub_path = f"*/*/*/{args.level_processing}/"
 
         data_fits_file_paths = [
                     filename
@@ -249,9 +254,9 @@ if __name__ == '__main__':
         extra_name = ''
         if args.apply_rfi_mask != None:
             if args.rfi_mask_level == 0:
-                extra_name = '_masklevel'+str(args.rfi_mask_level)+'_'+str(args.rfi_mask_level0_percentage)+'percents'
+                extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
             else:
-                extra_name = '_masklevel'+str(args.rfi_mask_level)
+                extra_name = '_masklevel'+str(int(args.rfi_mask_level))
         else:
             extra_name = '_nomaskapplied'
 
@@ -294,4 +299,5 @@ if __name__ == '__main__':
                             T_exoplanet = T_exoplanet,
                             target = target,
                             key_project = key_project,
-                            figsize = args.figsize)
+                            figsize = args.figsize,
+                            filename = args.input_hdf5_file.split('.')[0].split('/')[-1])
