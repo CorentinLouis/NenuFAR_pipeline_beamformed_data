@@ -63,13 +63,15 @@ def read_hdf5_file(input_file):
         power_LS = numpy.array(file_hdf5['power_LS'])
         key_project = file_hdf5['key_project'][()].decode('utf-8')
         target = file_hdf5['Target'][()].decode('utf-8')
+        stokes = file_hdf5['Stokes'][()].decode('utf-8')    
         T_exoplanet = file_hdf5['T_exoplanet'][()]
-    
+
 
     return(time_datetime,
             frequency_obs,
             frequency_LS,
             power_LS,
+            stokes,
             key_project,
             target,
             T_exoplanet
@@ -81,6 +83,7 @@ def save_to_hdf(time,
                 data_final,
                 frequency_LS,
                 power_LS,
+                stokes,
                 output_directory,
                 key_project,
                 target,
@@ -89,7 +92,7 @@ def save_to_hdf(time,
     """
     Saves the data to disk as an HDF5 file.
     """
-    with File(output_directory+'lomb_scargle_periodogram_LT'+key_project+'_'+target+extra_name+'.hdf5', 'w') as output_file:
+    with File(output_directory+'lomb_scargle_periodogram_Stokes-'+stokes+'_LT'+key_project+'_'+target+extra_name+'.hdf5', 'w') as output_file:
         output_file.create_dataset('Time', data = time)
         output_file['Time'].attrs.create('format', 'unix')
         output_file['Time'].attrs.create('units', 's')
@@ -103,15 +106,18 @@ def save_to_hdf(time,
         output_file.create_dataset('Target', data=target)
         output_file.create_dataset('T_exoplanet', data=T_exoplanet)
         output_file['T_exoplanet'].attrs.create('units', 'h')
+        output_file.create_dataset('Stokes', data = stokes)
 
 def plot_LS_periodogram(frequencies,
                         f_LS,
                         power_LS,
+                        stokes,
                         output_directory,
                         T_exoplanet = 1.769137786,
                         target = 'Jupiter',
                         key_project = '07',
-                        figsize = (15,20)):
+                        figsize = (15,20),
+                        extra_name = ''):
     """
     INPUT:
         - frequencies: Observation frequencies (in MHz)
@@ -153,7 +159,7 @@ def plot_LS_periodogram(frequencies,
     axs[index_freq].set_xlabel("Periodicity (Hours)")
     plt.tight_layout()
     #plt.show()
-    plt.savefig(output_directory+'lomb_scargle_periodogram_LT'+key_project+'_'+target+'.png', dpi = dpi, format = 'png')
+    plt.savefig(output_directory+'lomb_scargle_periodogram_Stokes-'+stokes+'_LT'+key_project+'_'+target+extra_name+'.png', dpi = dpi, format = 'png')
 
 
 if __name__ == '__main__':
@@ -240,21 +246,22 @@ if __name__ == '__main__':
         lazy_loader.find_rotation_period_exoplanet()
         T_exoplanet = lazy_loader.exoplanet_period # in days
 
+        extra_name = ''
+        if args.apply_rfi_mask != None:
+            if args.rfi_mask_level == 0:
+                extra_name = '_masklevel'+str(args.rfi_mask_level)+'_'+str(args.rfi_mask_level0_percentage)+'percents'
+            else:
+                extra_name = '_masklevel'+str(args.rfi_mask_level)
+        else:
+            extra_name = '_nomaskapplied'
 
         if args.save_as_hdf5:
-            extra_name = ''
-            if args.apply_rfi_mask != None:
-                if args.apply_rfi_mask == 0:
-                    extra_name = '_masklevel'+str(args.rfi_mask_level)+'_'+str(args.rfi_mask_level0_percentage)+'percents'
-                else:
-                    extra_name = '_masklevel'+str(args.rfi_mask_level)
-            else:
-                extra_name = '_nomaskapplied'
             save_to_hdf(time,
                     frequencies,
                     data_final,
                     f_LS,
                     power_LS,
+                    args.stokes,
                     args.output_directory,
                     args.key_project,
                     args.target,
@@ -265,21 +272,24 @@ if __name__ == '__main__':
             plot_LS_periodogram(frequencies,
                                 f_LS,
                                 power_LS,
+                                args.stokes,
                                 args.output_directory,
                                 T_exoplanet = T_exoplanet,
                                 target = args.target,
                                 key_project = args.key_project,
-                                figsize = args.figsize)
+                                figsize = args.figsize,
+                                extra_name = extra_name)
 
        
     if args.plot_only:
         if args.input_hdf5_file == None:
             raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --plot_only is set as True")
         
-        (time_datetime, frequency_obs, frequency_LS, power_LS, key_project, target, T_exoplanet) = read_hdf5_file(args.input_hdf5_file)
+        (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet) = read_hdf5_file(args.input_hdf5_file)
         plot_LS_periodogram(frequency_obs,
                             frequency_LS,
                             power_LS,
+                            stokes,
                             args.output_directory,
                             T_exoplanet = T_exoplanet,
                             target = target,
