@@ -213,18 +213,18 @@ class LazyFITSLoader:
 
     def lazy_interp(self, x, xp, fp, axis=0, dtype = float):
         """
-        Rebin the data to a new time array
+        Rebin the data to a new array (axis = 0 == Time, axis = 1 == Frequency)
 
         Parameters:
             fp: data to be rebinned
             x (dask.array): array on which the the rebin will be done
             xp: original array corresponding to fp in the axis direction
-            axis : axis over which interpolation needs to be done
+            axis : axis over which interpolation needs to be done (axis = 0 == Time, axis = 1 == Frequency)
 
         Returns:
             rebinned data array
         """ 
-        interp_func = interp1d(xp, fp, axis=axis, kind='linear')
+        interp_func = interp1d(xp, fp, axis=axis, kind='linear', bounds_error = False)
         return interp_func(x)
 
     def lazy_rebin(self, x, new_time, new_time_chunks):
@@ -365,6 +365,19 @@ class LazyFITSLoader:
             if len(w_frequency) != 0:
                 if self.apply_rfi_mask == True:
                     rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
+
+#2024-03-18 18:02:16 | INFO: Starting 77 / 154 observation
+#/data/clouis/LT02/NenuFAR_pipeline_beamformed_data/lazy_dask_loader.py:362: PerformanceWarning: Slicing is producing a large chunk. To accept the large
+#chunk and silence this warning, set the option
+#    >>> with dask.config.set(**{'array.slicing.split_large_chunks': False}):
+#    ...     array[indexer]
+#
+#To avoid creating the large chunks, set the option
+#    >>> with dask.config.set(**{'array.slicing.split_large_chunks': True}):
+#    ...     array[indexer]
+#  rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
+#2024-03-18 18:02:21 | INFO: Ending 77 / 154 observation
+
                     if self.rfi_mask_level == 0:
                         rfi_mask_to_apply[rfi_mask_to_apply >= self.rfi_mask_level0_percentage/100] = 1
                         rfi_mask_to_apply[rfi_mask_to_apply < self.rfi_mask_level0_percentage/100] = 0
@@ -447,11 +460,30 @@ class LazyFITSLoader:
                                                         )
                         else:
                             data_tmp_ = data_stokes_L
+
+
+                # Interpolating in frequency        
+                if self.interpolation_in_frequency:
+                    if (frequencies[i_obs][w_frequency][-1] - frequencies[i_obs][w_frequency][0]) >= self.interpolation_in_frequency_value:
+                        frequency_interp = da.arange(frequency_interval[0], frequency_interval[-1]+self.interpolation_in_frequency_value, self.interpolation_in_frequency_value)
+                        data_tmp_ = da.map_blocks(
+                                                self.lazy_interp,
+                                                frequency_interp,
+                                                frequencies[i_obs][w_frequency],
+                                                data_tmp_,
+                                                axis = 1,
+                                                dtype=float                 
+                                                )
+                        frequency = frequency_interp
+                else:
+                    if log_infos:
+                        log.info("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
+                        raise Warning("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
                     
                 data_final_.append(data_tmp_)
                 if self.apply_rfi_mask == True:
                     rfi_mask_tmp_.append(rfi_mask_to_apply)
-                frequency_final_.append(frequencies[i_obs][w_frequency])
+                frequency_final_.append(frequency)
                 
             if log_infos:
                 log.info(f"Ending {i_obs+1} / {len(time_)} observation")
@@ -462,35 +494,18 @@ class LazyFITSLoader:
         # Concatenating of arrays over observation
         time = da.concatenate(time_, axis=0)
         time_interp = da.concatenate(time_interp_, axis = 0)
-        if numpy.max(frequency_final_[-1] - frequency_final_[0]) > 1e-8:
-            raise RuntimeError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
+        if numpy.max(frequency_final_[-1]) - numpy.max(frequency_final_[0]) > 1e-8:
+            raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
         else:
             frequency = frequency_final_[0]
-        #frequency = frequency[w_frequency]
+        
+        frequency = frequency_final_[0]
         data_final = da.concatenate(data_final_, axis=0)
 
 
 
         if self.apply_rfi_mask == True:
             rfi_mask = da.concatenate(rfi_mask_tmp_, axis=0)
-
-
-        # Interpolating in frequency        
-        if self.interpolation_in_frequency:
-            if (frequency[-1] - frequency[0]) >= self.interpolation_in_frequency_value:
-                frequency_interp = da.arange(frequency[0], frequency[-1], self.interpolation_in_frequency_value)
-                data_final = da.map_blocks(
-                                                self.lazy_interp,
-                                                frequency_interp,
-                                                frequency,
-                                                data_final,
-                                                axis = 1,
-                                                dtype=float                 
-                                                )
-                frequency = frequency_interp
-            else:
-                if log_infos:
-                    log.info("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")    
         if verbose:
             with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
                 with ProgressBar():
