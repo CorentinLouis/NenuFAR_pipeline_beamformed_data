@@ -350,7 +350,7 @@ class LazyFITSLoader:
 
         data_final_ = []
         frequency_final_ = []
-        rfi_mask_tmp_ = []
+        #rfi_mask_tmp_ = []
         
         if log_infos:
             log.info("Start applying mask and interpolating data")
@@ -481,8 +481,8 @@ class LazyFITSLoader:
                         raise Warning("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
                     
                 data_final_.append(data_tmp_)
-                if self.apply_rfi_mask == True:
-                    rfi_mask_tmp_.append(rfi_mask_to_apply)
+                #if self.apply_rfi_mask == True:
+                #    rfi_mask_tmp_.append(rfi_mask_to_apply)
                 frequency_final_.append(frequency)
                 
             if log_infos:
@@ -499,7 +499,7 @@ class LazyFITSLoader:
         else:
             frequency = frequency_final_[0]
         
-        frequency = frequency_final_[0]
+        #frequency = frequency_final_[0]
         data_final = da.concatenate(data_final_, axis=0)
 
 
