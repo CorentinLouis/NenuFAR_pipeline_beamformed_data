@@ -464,21 +464,25 @@ class LazyFITSLoader:
 
                 # Interpolating in frequency        
                 if self.interpolation_in_frequency:
-                    if (frequencies[i_obs][w_frequency][-1] - frequencies[i_obs][w_frequency][0]) >= self.interpolation_in_frequency_value:
-                        frequency_interp = da.arange(frequency_interval[0], frequency_interval[-1]+self.interpolation_in_frequency_value, self.interpolation_in_frequency_value)
-                        data_tmp_ = da.map_blocks(
-                                                self.lazy_interp,
-                                                frequency_interp,
-                                                frequencies[i_obs][w_frequency],
-                                                data_tmp_,
-                                                axis = 1,
-                                                dtype=float                 
-                                                )
-                        frequency = frequency_interp
+                    #if (frequencies[i_obs][w_frequency][-1] - frequencies[i_obs][w_frequency][0]) >= self.interpolation_in_frequency_value:
+                    frequency_interp = da.arange(frequency_interval[0], frequency_interval[-1]+self.interpolation_in_frequency_value, self.interpolation_in_frequency_value)
+                    data_tmp_ = da.map_blocks(
+                                            self.lazy_interp,
+                                            frequency_interp,
+                                            frequencies[i_obs][w_frequency],
+                                            data_tmp_,
+                                            axis = 1,
+                                            dtype=float                 
+                                            )
+                    frequency = frequency_interp
+                    
+                    #else:
+                    #    if log_infos:
+                    #        log.info("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
+                    #        raise Warning("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
+                    #    frequency = frequencies[i_obs][w_frequency]
                 else:
-                    if log_infos:
-                        log.info("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
-                        raise Warning("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
+                    frequency = frequencies[i_obs][w_frequency]
                     
                 data_final_.append(data_tmp_)
                 #if self.apply_rfi_mask == True:
