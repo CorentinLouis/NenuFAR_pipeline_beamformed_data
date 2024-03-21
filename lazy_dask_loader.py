@@ -21,6 +21,7 @@ import sys
 
 import glob
 
+from typing import Tuple
 
 # ============================================================= #
 # ------------------- Logging configuration ------------------- #
@@ -227,27 +228,52 @@ class LazyFITSLoader:
         interp_func = interp1d(xp, fp, axis=axis, kind='linear', bounds_error = False)
         return interp_func(x)
 
-    def lazy_rebin(self, x, new_time, new_time_chunks):
-# Not currently used. Might be simplier and quicker to rebin instead of interpolate.
-# Need to be written / double checked
-        """
-        Rebin the data to a new time array.
-        
-        Parameters:
-            x (dask.array): The input data array to be rebinned.
-            new_time (numpy.array): The new time array.
-            new_time_chunks (tuple): The chunking configuration for the new time array.
 
-        Returns:
-            dask.array: The rebinned data array.
-        """
-        # Find the new indices corresponding to the new time array
-        new_indices = numpy.searchsorted(time_, new_time)
-        
-        # Rebin the data array based on the new indices
-        rebinned_data = numpy.take(x, new_indices, axis=0)
-        
-        return da.from_array(rebinned_data, chunks=new_time_chunks)
+
+    def lazy_rebin(self,
+                    new_axis_array,
+                    original_axis_array,
+                    data,
+                    axis = 0
+                    ):
+            """
+            Rebins the data along a specified axis by averaging over bins.
+
+            Parameters:
+                data: Dask array representing the data to be rebinned.
+                original_axis_array: NumPy array representing the original axis values.
+                new_axis_array: NumPy array representing the new axis values after rebinning.
+                axis: Integer indicating the axis along which rebinning needs to be done (0 or 1).
+
+            Returns:
+                The rebinned data array (Dask array).
+            """
+
+            if axis not in (0, 1):
+                raise ValueError("Axis value should be 0 or 1.")
+
+            initial_size = original_axis_array.size
+            final_size = new_axis_array.size
+
+            # Calculate the spacing values dx and new_dx
+            dx = numpy.mean(numpy.diff(original_axis_array))
+            new_dx = numpy.mean(numpy.diff(new_axis_array))
+            # Determine the bin edges for the new axis
+            bin_edges = numpy.concatenate(([new_axis_array[0] - new_dx / 2], new_axis_array + new_dx / 2))
+
+            # Calculate the bin indices for each point along the original axis
+            bin_indices = numpy.digitize(original_axis_array, bin_edges) - 1
+
+            # Perform rebinning along the specified axis
+            if axis == 0:
+                rebinned_data = da.stack([data[bin_indices == i].mean(axis=0) for i in range(len(new_axis_array))])
+            else:
+                rebinned_data = da.stack([data[:, bin_indices == i].mean(axis=1) for i in range(len(new_axis_array))], axis=1)
+
+            return rebinned_data
+
+
+        #return da.from_array(rebinned_data, chunks=new_time_chunks)
 
          
     def lazy_interpolate_with_rfi_mask(self, time_interp, time, data1, data2, axis = 0, dtype = float):
@@ -467,7 +493,7 @@ class LazyFITSLoader:
                     #if (frequencies[i_obs][w_frequency][-1] - frequencies[i_obs][w_frequency][0]) >= self.interpolation_in_frequency_value:
                     frequency_interp = da.arange(frequency_interval[0], frequency_interval[-1]+self.interpolation_in_frequency_value, self.interpolation_in_frequency_value)
                     data_tmp_ = da.map_blocks(
-                                            self.lazy_interp,
+                                            self.lazy_rebin,
                                             frequency_interp,
                                             frequencies[i_obs][w_frequency],
                                             data_tmp_,
@@ -479,10 +505,10 @@ class LazyFITSLoader:
                     #else:
                     #    if log_infos:
                     #        log.info("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
-                    #        raise Warning("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
-                    #    frequency = frequencies[i_obs][w_frequency]
+                            #raise Warning("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
+                    #    frequency = da.array(frequencies[i_obs][w_frequency])
                 else:
-                    frequency = frequencies[i_obs][w_frequency]
+                    frequency = da.array(frequencies[i_obs][w_frequency])
                     
                 data_final_.append(data_tmp_)
                 #if self.apply_rfi_mask == True:
