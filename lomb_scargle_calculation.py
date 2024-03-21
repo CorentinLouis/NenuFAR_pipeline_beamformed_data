@@ -277,7 +277,7 @@ if __name__ == '__main__':
                 extra_name = '_masklevel'+str(int(args.rfi_mask_level))
         else:
             extra_name = '_nomaskapplied'
-        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{args.frequency_interval[1]}MHZ'
+        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHZ'
 
         if args.save_as_hdf5:
             save_to_hdf(time,
