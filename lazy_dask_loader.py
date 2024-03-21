@@ -266,9 +266,9 @@ class LazyFITSLoader:
 
             # Perform rebinning along the specified axis
             if axis == 0:
-                rebinned_data = da.stack([data[bin_indices == i].mean(axis=0) for i in range(len(new_axis_array))])
+                rebinned_data = da.stack([da.nanmean(data[bin_indices == i], axis=axis) for i in range(len(new_axis_array))])
             else:
-                rebinned_data = da.stack([data[:, bin_indices == i].mean(axis=1) for i in range(len(new_axis_array))], axis=1)
+                rebinned_data = da.stack([da.nanmean(data[:, bin_indices == i], axis=1) for i in range(len(new_axis_array))], axis=1)
 
             return rebinned_data
 
