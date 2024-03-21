@@ -51,7 +51,7 @@ def timestamp_to_datetime(timestamp_table):
     return (result)
 
 
-def read_hdf5_file(input_file):
+def read_hdf5_file(input_file, dataset=False):
     """
     Reads the LS data from an HDF5 file.
     """
@@ -66,8 +66,20 @@ def read_hdf5_file(input_file):
         stokes = file_hdf5['Stokes'][()].decode('utf-8')    
         T_exoplanet = file_hdf5['T_exoplanet'][()]
 
-
-    return(time_datetime,
+    if dataset == True:
+        data = numpy.array(file_hdf5['Dataset'])
+        return(time_datetime,
+            frequency_obs,
+            data,
+            frequency_LS,
+            power_LS,
+            stokes,
+            key_project,
+            target,
+            T_exoplanet
+            )
+    else:
+        return(time_datetime,
             frequency_obs,
             frequency_LS,
             power_LS,
@@ -96,6 +108,7 @@ def save_to_hdf(time,
         output_file.create_dataset('Time', data = time)
         output_file['Time'].attrs.create('format', 'unix')
         output_file['Time'].attrs.create('units', 's')
+        output_file.create_dataset('Dataset', data = data_final)
         output_file.create_dataset('Frequency_Obs', data=frequency_obs)
         output_file['Frequency_Obs'].attrs.create('units', 'MHz')
         output_file.create_dataset('Frequency_LS', data=frequency_LS)
@@ -223,6 +236,11 @@ if __name__ == '__main__':
                                     args.target
                                 )
         
+        if args.interpolation_in_frequency:
+            freq_user = numpy.arange(args.frequency_interval[0], args.frequency_interval[-1]+args.interpolation_in_frequency_value, args.interpolation_in_frequency_value)
+        else:
+            freq_user = numpy.arange(args.frequency_interval[0], args.frequency_interval[-1]+args.interpolation_in_frequency_value, 1)
+
 
         time, frequencies, data_final = lazy_loader.get_dask_array(
             frequency_interval=args.frequency_interval,
@@ -238,8 +256,8 @@ if __name__ == '__main__':
             log_infos = args.log_infos
         )
 
-
-        args_list = [(lazy_loader, index_freq, time, data_final, False) for index_freq in range(len(frequencies))]
+        normalize_LS = False
+        args_list = [(lazy_loader, index_freq, time, data_final, normalize_LS) for index_freq in range(len(frequencies))]
             
         with multiprocessing.Pool() as pool:
             results = pool.map(calculate_LS, args_list)
@@ -259,6 +277,7 @@ if __name__ == '__main__':
                 extra_name = '_masklevel'+str(int(args.rfi_mask_level))
         else:
             extra_name = '_nomaskapplied'
+        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{args.frequency_interval[1]}MHZ'
 
         if args.save_as_hdf5:
             save_to_hdf(time,
