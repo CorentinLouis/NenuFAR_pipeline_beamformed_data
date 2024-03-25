@@ -7,8 +7,9 @@ from astropy.timeseries import TimeSeries
 import astropy.units as u
 import math
 
-from scipy.signal import lombscargle
-from astropy.timeseries import LombScargle
+from scipy.signal import lombscargle as LombScargle_scipy
+from astropy.timeseries import LombScargle as LombScargle_astropy
+from astroML.time_series import lomb_scargle as LombScargle_astroML
 
 from scipy.interpolate import interp1d
 
@@ -46,6 +47,7 @@ class LazyFITSLoader:
     def __init__(
         self, data_fits_file_paths,
         rfi_fits_file_paths,
+        stokes,
         exoplanet_name
         ):
         """
@@ -59,6 +61,7 @@ class LazyFITSLoader:
         self.data_fits_file_paths = data_fits_file_paths
         self.rfi_fits_file_paths = rfi_fits_file_paths
         self.exoplanet_name = exoplanet_name
+        self.stokes
         self.client = None
 
     def find_rotation_period_exoplanet(self):
@@ -116,6 +119,7 @@ class LazyFITSLoader:
                         data_[k, :, :] = da.from_array(hdus[3 + k].data, chunks=(chunk_size_frequency, chunk_size_time))
                     data_ = data_.T
                 
+
                 if log_infos:
                     log.info(f"End testing fits file {count+1} / {len(self.data_fits_file_paths)}")
 
@@ -385,10 +389,10 @@ class LazyFITSLoader:
         self.interpolation_in_time_value = interpolation_in_time_value
         self.interpolation_in_frequency = interpolation_in_frequency
         self.interpolation_in_frequency_value = interpolation_in_frequency_value
-        self.stokes = stokes
+        #self.stokes = stokes
 
 
-        stokes = stokes[0]
+        stokes = self.stokes[0]
 
         #if len(i_frequency) == 1:
         #    i_frequency = [i_frequency[0],i_frequency[0]+1]
@@ -396,6 +400,7 @@ class LazyFITSLoader:
         #    i_frequency[1] += 1
         
         stokes_index = {
+            'RM': 0,
             'I': 0,
             'Q': 1,
             'U': 2,
@@ -589,25 +594,25 @@ class LazyFITSLoader:
 
         #if self.apply_rfi_mask == True:
         #    rfi_mask = da.concatenate(rfi_mask_tmp_, axis=0)
-        #if verbose:
-        #    with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
-        #        with ProgressBar():
-        #            if self.interpolation_in_time:
-        #                time = time_interp.compute()
-        #            else:
-        #                time = time.compute()
-        #        with ProgressBar():
-        #            frequency = frequency.compute()
-        #        with ProgressBar():
-        #            data_final = data_final.compute()
-        #    visualize([prof, rprof, cprof,])
-        #else:
-        #    time = time_interp.compute()
-        #    frequency = frequency.compute()
-        #    data_final = data_final.compute()
+        if verbose:
+            with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
+                with ProgressBar():
+                    if self.interpolation_in_time:
+                        time = time_interp.compute()
+                    else:
+                        time = time.compute()
+                with ProgressBar():
+                    frequency = frequency.compute()
+                with ProgressBar():
+                    data_final = data_final.compute()
+            visualize([prof, rprof, cprof,])
+        else:
+            time = time_interp.compute()
+            frequency = frequency.compute()
+            data_final = data_final.compute()
         
-        if self.interpolation_in_time:
-            time = time_interp
+        #if self.interpolation_in_time:
+        #    time = time_interp
         return time, frequency, data_final
             #return time.compute(), frequency[i_frequency[0]:i_frequency[1]].compute(), data_final_.compute()
 
@@ -642,9 +647,17 @@ class LazyFITSLoader:
             log.info("Starting Lomb Scargle periodogram computation")
         
         if type_LS.lower() == 'scipy':
-            power_LS = lombscargle(time, data, f_LS, normalize=normalized_LS)
+            power_LS = LombScargle_scipy(time, data, f_LS, normalize=normalized_LS)
+        if type_LS.lower() == 'astroml':
+            power_LS = LombScargle_astroML(time, data, f_LS)
         if type_LS.lower() == 'astropy':
-            frequency_LS, power_LS = LombScargle(time, data).autopower()
+            #time in jd Time(data)
+            if normalized_LS:
+                normalization='standard'
+            else:
+                normalization=''
+            frequency_LS, power_LS = LombScargle_astropy(time, data, fit_mean = True).autopower(method = 'auto', minimum_frequency = f_LS[0], maximum_frequency = f_LS[-1], samples_per_peak=1000)
+            f_LS = frequency_LS
         if log_infos:
             log.info("End Lomb Scargle periodogram computation")
 

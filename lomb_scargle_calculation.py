@@ -131,7 +131,7 @@ def plot_LS_periodogram(frequencies,
                         T_exoplanet = 1.769137786,
                         target = 'Jupiter',
                         key_project = '07',
-                        figsize = (15,20),
+                        figsize = None,
                         extra_name = '',
                         filename = None):
     """
@@ -144,7 +144,9 @@ def plot_LS_periodogram(frequencies,
     OUTPUT:
         - png file of LombScargle periodograms (one per value in frequencies), saved in the output_directory directory
     """
-    dpi = 200
+    dpi = 500
+    if figsize == None:
+        figsize = (15,len(frequencies)*3)
     fig, axs = plt.subplots(nrows=len(frequencies), sharex=True, dpi=dpi, figsize = figsize)
 
     if target == 'Jupiter':
@@ -152,13 +154,11 @@ def plot_LS_periodogram(frequencies,
         T_jupiter = 9.9250/24
         T_synodique = (T_io*T_jupiter)/abs(T_io-T_jupiter)
 
-    print(len(frequencies))
-
     if len(frequencies) > 1:
         for index_freq in range(len(frequencies)):
             axs[index_freq].plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
             #plt.yscale('log')
-            axs[index_freq].set_title(f'Frequency: {frequencies[index_freq][0]} MHz')
+            axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
             if target == 'Jupiter':
                 axs[index_freq].vlines([T_io*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
                 axs[index_freq].vlines([T_io*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
@@ -179,7 +179,7 @@ def plot_LS_periodogram(frequencies,
     else:
         index_freq = 0
         axs.plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
-        axs.set_title(f'Frequency: {frequencies[index_freq][0]} MHz')
+        axs.set_title(f'Frequency: {frequencies[index_freq]} MHz')
         if target == 'Jupiter':
             axs.vlines([T_io*24],          (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
             axs.vlines([T_io*24/2],        (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
@@ -229,7 +229,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--save_as_hdf5', dest = 'save_as_hdf5', default = False, action = 'store_true', help = "To save results in an hdf5 file")
     parser.add_argument('--plot_results', dest = 'plot_results', default = False, action = 'store_true', help = "To plot and save results")
-    parser.add_argument("--figsize", dest = 'figsize', nargs = 2, type = int, default = (15,20), help = "Figure size")
+    parser.add_argument("--figsize", dest = 'figsize', nargs = 2, type = int, default = None, help = "Figure size")
 
     parser.add_argument('--plot_only', dest = 'plot_only', default = False, action = 'store_true', help = "Set this as True if you only want to plot the results from pre-calculated data stored in an hdf5 file")
     parser.add_argument('--input_hdf5_file', dest = 'input_hdf5_file', default = None, type = str, help = "HDF5 file path containing pre-calculated data. Required if --plot_only is set as True")
@@ -263,6 +263,7 @@ if __name__ == '__main__':
                 ] 
 
         lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
+                                    args.stokes,
                                     args.target
                                 )
         time, frequencies, data_final = lazy_loader.get_dask_array(
@@ -299,38 +300,29 @@ if __name__ == '__main__':
         with multiprocessing.Pool() as pool:
             results = pool.map(calculate_LS, args_list)
 
-        if args.verbose:
-            with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
-                with ProgressBar():
-                    #time = [result[0].compute() for result in results]
-                    time = time.compute()
-                with ProgressBar():
-                    #frequencies = [result[1].compute() for result in results]
-                    frequencies = frequencies.compute()
-                with ProgressBar():
-                    #data_final = [result[2].compute() for result in results]
-                    data_final = data_final.compute()
-                with ProgressBar():
-                    #f_LS = [result[3].compute() for result in results]
-                    f_LS = [result[0].compute() for result in results]
-                with ProgressBar():
-                    #power_LS = [result[4].compute() for result in results]
-                    power_LS = [result[1].compute() for result in results]
-            visualize([prof, rprof, cprof,])
+        #if args.verbose:
+        #    with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
+        #        with ProgressBar():
+        #            time = time.compute()
+        #        with ProgressBar():
+        #            frequencies = frequencies.compute()
+        #        with ProgressBar():
+        #            data_final = data_final.compute()
+        #        with ProgressBar():
+        #            f_LS = [result[0].compute() for result in results]
+        #        with ProgressBar():
+        #            power_LS = [result[1].compute() for result in results]
+        #    visualize([prof, rprof, cprof,])
 
-        else:
-            #time = [result[0].compute() for result in results]
-            time = time.compute()
-            #frequencies = [result[1].compute() for result in results]
-            frequencies = frequencies.compute()
-            #data_final = [result[2].compute() for result in results]
-            data_final = data_final.compute()
-            #f_LS = [result[3].compute() for result in results]
-            f_LS = [result[0].compute() for result in results]
-            #power_LS = [result[4].compute() for result in results]
-            power_LS = [result[1].compute() for result in results]
+        #else:
+        #    time = time.compute()
+        #    frequencies = frequencies.compute()
+        #    data_final = data_final.compute()
+        #    f_LS = [result[0].compute() for result in results]
+        #    power_LS = [result[1].compute() for result in results]
 
-      
+        f_LS = [result[0] for result in results]
+        power_LS = [result[1] for result in results]
             
        
          # Concatenating of arrays over observation
@@ -364,7 +356,7 @@ if __name__ == '__main__':
                 extra_name = '_masklevel'+str(int(args.rfi_mask_level))
         else:
             extra_name = '_nomaskapplied'
-        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz'
+        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
 
         if args.save_as_hdf5:
             save_to_hdf(time,
