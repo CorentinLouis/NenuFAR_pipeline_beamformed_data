@@ -8,7 +8,7 @@ import astropy.units as u
 import math
 
 from scipy.signal import lombscargle
-# from astropy.timeseries import LombScargle --> to test
+from astropy.timeseries import LombScargle
 
 from scipy.interpolate import interp1d
 
@@ -225,12 +225,41 @@ class LazyFITSLoader:
         Returns:
             rebinned data array
         """ 
-        interp_func = interp1d(xp, fp, axis=axis, kind='linear', bounds_error = False)
+        interp_func = interp1d(xp, fp, axis=axis, kind='linear', bounds_error = None)
         return interp_func(x)
 
-
-
     def lazy_rebin(self,
+                    new_axis_array,
+                    dx_new_axis_array,
+                    original_axis_array,
+                    data,
+                    axis = 0
+                    ):
+            """
+            Rebins the data along a specified axis by averaging over bins.
+
+            Parameters:
+                data: Dask array representing the data to be rebinned.
+                original_axis_array: NumPy array representing the original axis values.
+                new_axis_array: NumPy array representing the new axis values after rebinning.
+                axis: Integer indicating the axis along which rebinning needs to be done (0 or 1).
+
+            Returns:
+                The rebinned data array (Dask array).
+            """
+
+            if axis == 0:
+                data_rebined = numpy.zeros((len(new_axis_array), data.shape[1]))
+                for index_axis, value_axis  in enumerate(new_axis_array):
+                    data_rebined[index_axis, :] = numpy.nanmean(data[(original_axis_array >= value_axis) & (original_axis_array < value_axis+dx_new_axis_array),:], axis=0)
+            if axis == 1:
+                data_rebined = numpy.zeros((data.shape[0], len(new_axis_array)))
+                for index_axis, value_axis  in enumerate(new_axis_array):
+                    data_rebined[:, index_axis] = numpy.nanmean(data[:, (original_axis_array >= value_axis) & (original_axis_array < value_axis+dx_new_axis_array)], axis=1)
+
+            return data_rebined
+
+    def lazy_rebin_old(self,
                     new_axis_array,
                     original_axis_array,
                     data,
@@ -291,6 +320,29 @@ class LazyFITSLoader:
         result = self.safe_divide(numerator, denominator)
         
         return result
+
+
+    def lazy_rebin_with_rfi_mask(self, time_interp, dtime_interp, time, data1, data2, axis = 0, dtype = float):
+    
+        data_tmp = data1*data2
+        
+        numerator = da.empty_like(time_interp)
+        denominator = da.empty_like(time_interp)
+
+        end_times = time_interp + dtime_interp
+
+        for index_axis, value_axis  in enumerate(time_interp):
+            tmp_mask = (time >= value_axis) & (time < end_times[index_axis])
+            numerator[index_axis] = numpy.nanmean(data_tmp[tmp_mask])
+            denominator[index_axis] = numpy.nanmean(data2[tmp_mask])
+
+        #numerator = da.from_array(numerator, chunks=(len(time_interp)))
+        #denominator = da.from_array(denominator, chunks=(len(time_interp)))
+
+        
+        
+        return self.safe_divide(numerator, denominator)
+
 
     def safe_divide(self, numerator, denominator):
         def divide_chunk(numerator_chunk, denominator_chunk):
@@ -491,10 +543,11 @@ class LazyFITSLoader:
                 # Interpolating in frequency        
                 if self.interpolation_in_frequency:
                     #if (frequencies[i_obs][w_frequency][-1] - frequencies[i_obs][w_frequency][0]) >= self.interpolation_in_frequency_value:
-                    frequency_interp = da.arange(frequency_interval[0], frequency_interval[-1]+self.interpolation_in_frequency_value, self.interpolation_in_frequency_value)
+                    frequency_interp = da.arange(frequency_interval[0], frequency_interval[-1], self.interpolation_in_frequency_value)
                     data_tmp_ = da.map_blocks(
                                             self.lazy_rebin,
                                             frequency_interp,
+                                            self.interpolation_in_frequency_value,
                                             frequencies[i_obs][w_frequency],
                                             data_tmp_,
                                             axis = 1,
@@ -536,26 +589,29 @@ class LazyFITSLoader:
 
         #if self.apply_rfi_mask == True:
         #    rfi_mask = da.concatenate(rfi_mask_tmp_, axis=0)
-        if verbose:
-            with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
-                with ProgressBar():
-                    if self.interpolation_in_time:
-                        time = time_interp.compute()
-                    else:
-                        time = time.compute()
-                with ProgressBar():
-                    frequency = frequency.compute()
-                with ProgressBar():
-                    data_final = data_final.compute()
-            visualize([prof, rprof, cprof,])
-        else:
-            time = time_interp.compute()
-            frequency = frequency.compute()
-            data_final = data_final.compute()
+        #if verbose:
+        #    with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
+        #        with ProgressBar():
+        #            if self.interpolation_in_time:
+        #                time = time_interp.compute()
+        #            else:
+        #                time = time.compute()
+        #        with ProgressBar():
+        #            frequency = frequency.compute()
+        #        with ProgressBar():
+        #            data_final = data_final.compute()
+        #    visualize([prof, rprof, cprof,])
+        #else:
+        #    time = time_interp.compute()
+        #    frequency = frequency.compute()
+        #    data_final = data_final.compute()
+        
+        if self.interpolation_in_time:
+            time = time_interp
         return time, frequency, data_final
             #return time.compute(), frequency[i_frequency[0]:i_frequency[1]].compute(), data_final_.compute()
 
-    def LS_calculation(self, time, data, normalized_LS = False):
+    def LS_calculation(self, time, data, normalized_LS = False, log_infos = False, type_LS = "scipy"):
         """
         Calculate LombScargle periodogram for given time[nt] and data[nt] computed Dask array (so for a specific frequency and Stokes parameter).
 
@@ -581,7 +637,16 @@ class LazyFITSLoader:
             data[data < 0] = 0
         if self.stokes == 'V-':
             data[data > 0] = 0
-        power_LS = lombscargle(time, data, f_LS, normalize=normalized_LS)
+        
+        if log_infos:
+            log.info("Starting Lomb Scargle periodogram computation")
+        
+        if type_LS.lower() == 'scipy':
+            power_LS = lombscargle(time, data, f_LS, normalize=normalized_LS)
+        if type_LS.lower() == 'astropy':
+            frequency_LS, power_LS = LombScargle(time, data).autopower()
+        if log_infos:
+            log.info("End Lomb Scargle periodogram computation")
 
         return f_LS, power_LS
 

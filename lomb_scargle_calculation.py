@@ -66,18 +66,20 @@ def read_hdf5_file(input_file, dataset=False):
         stokes = file_hdf5['Stokes'][()].decode('utf-8')    
         T_exoplanet = file_hdf5['T_exoplanet'][()]
 
+        if dataset == True:
+            data = numpy.array(file_hdf5['Dataset'])
+
     if dataset == True:
-        data = numpy.array(file_hdf5['Dataset'])
         return(time_datetime,
-            frequency_obs,
-            data,
-            frequency_LS,
-            power_LS,
-            stokes,
-            key_project,
-            target,
-            T_exoplanet
-            )
+                frequency_obs,
+                data,
+                frequency_LS,
+                power_LS,
+                stokes,
+                key_project,
+                target,
+                T_exoplanet
+                )
     else:
         return(time_datetime,
             frequency_obs,
@@ -150,27 +152,52 @@ def plot_LS_periodogram(frequencies,
         T_jupiter = 9.9250/24
         T_synodique = (T_io*T_jupiter)/abs(T_io-T_jupiter)
 
-    for index_freq in range(len(frequencies)):
-        axs[index_freq].plot(1/f_LS[index_freq]/60/60, power_LS[index_freq])
-        #plt.yscale('log')
-        axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
-        if target == 'Jupiter':
-            axs[index_freq].vlines([T_io*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', label = r"$T_{Io}$")
-            axs[index_freq].vlines([T_io*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
-            axs[index_freq].vlines([T_jupiter*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='g',label = r"$T_{Jup}$")
-            axs[index_freq].vlines([T_jupiter*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Io}$")
-            axs[index_freq].vlines([T_synodique*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='y',label = r"$T_{synodic}$")
-            axs[index_freq].vlines([T_synodique*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
+    print(len(frequencies))
 
+    if len(frequencies) > 1:
+        for index_freq in range(len(frequencies)):
+            axs[index_freq].plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
+            #plt.yscale('log')
+            axs[index_freq].set_title(f'Frequency: {frequencies[index_freq][0]} MHz')
+            if target == 'Jupiter':
+                axs[index_freq].vlines([T_io*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
+                axs[index_freq].vlines([T_io*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
+                axs[index_freq].vlines([T_jupiter*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{Jup}$")
+                axs[index_freq].vlines([T_jupiter*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Io}$")
+                axs[index_freq].vlines([T_synodique*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
+                axs[index_freq].vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
+            else:
+                axs[index_freq].vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{{target}}$")
+                axs[index_freq].vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{{target}}$")
+            axs[index_freq].xaxis.set_minor_locator(MultipleLocator(1))
+            axs[index_freq].xaxis.set_major_locator(MultipleLocator(5))
+            if index_freq == 0:
+                axs[index_freq].legend()
+        axs[index_freq].set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
+        axs[index_freq].set_xlabel("Periodicity (Hours)")
+
+    else:
+        index_freq = 0
+        axs.plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
+        axs.set_title(f'Frequency: {frequencies[index_freq][0]} MHz')
+        if target == 'Jupiter':
+            axs.vlines([T_io*24],          (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
+            axs.vlines([T_io*24/2],        (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
+            axs.vlines([T_jupiter*24],     (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{Jup}$")
+            axs.vlines([T_jupiter*24/2],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Io}$")
+            axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
+            axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
         else:
-            axs[index_freq].vlines([T_exoplanet*24], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', label = r"$T_{{target}}$")
-            axs[index_freq].vlines([T_exoplanet*24/2], power_LS[index_freq].min(), power_LS[index_freq].max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{{target}}$")
-        axs[index_freq].xaxis.set_minor_locator(MultipleLocator(1))
-        axs[index_freq].xaxis.set_major_locator(MultipleLocator(5))
-        if index_freq == 0:
-            axs[index_freq].legend()
-    axs[index_freq].set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
-    axs[index_freq].set_xlabel("Periodicity (Hours)")
+            axs.vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{{target}}$")
+            axs.vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{{target}}$")
+        axs.xaxis.set_minor_locator(MultipleLocator(1))
+        axs.xaxis.set_major_locator(MultipleLocator(5))
+        axs.legend()
+        axs.set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
+        axs.set_xlabel("Periodicity (Hours)")
+
+
+
     plt.tight_layout()
     #plt.show()
     if filename == None:
@@ -193,9 +220,12 @@ if __name__ == '__main__':
     parser.add_argument('--interpolation_in_time_value', dest = 'interpolation_in_time_value', default = 1, type = float, help = "Value in second over which data need to be interpolated")
     parser.add_argument('--interpolation_in_frequency', dest = 'interpolation_in_frequency', default = False, action = 'store_true', help = "Interpolate in time")
     parser.add_argument('--interpolation_in_frequency_value', dest = 'interpolation_in_frequency_value', default = 1, type = float, help = "Value in MegaHertz (MHz) over which data need to be interpolaed")
-    parser.add_argument('--frequency_interval', dest = 'frequency_interval', nargs = 2, type = float, default = [10,90], help = "Minimal and maximal frequency values over which the Lomb Scargle analysis has to be done")
+    parser.add_argument('--frequency_interval', dest = 'frequency_interval', nargs = 2, type = float, default = [10,90], help = "Half-open Minimal and Maximal (i.e., [Minimal to Maximal)) frequency range over which the Lomb Scargle analysis has to be done")
     parser.add_argument('--verbose', dest = 'verbose', default = False, action = 'store_true', help = "To print on screen the log infos")
     parser.add_argument('--log_infos', dest = 'log_infos', default = False, action = 'store_true', help = "To print on screen the dask computing info, and control graphics after computation")
+    
+    parser.add_argument('--lombscargle_function', dest = 'lombscargle_function', type = str, default = 'scipy', help = "LombScargle package to be used. Options are 'scipy' or 'astropy'")
+    parser.add_argument('--normalize_LS', dest = 'normalize_LS', default = False, action = 'store_true', help = "Normalization of the Lomb-Scargle periodogram")
     
     parser.add_argument('--save_as_hdf5', dest = 'save_as_hdf5', default = False, action = 'store_true', help = "To save results in an hdf5 file")
     parser.add_argument('--plot_results', dest = 'plot_results', default = False, action = 'store_true', help = "To plot and save results")
@@ -235,18 +265,11 @@ if __name__ == '__main__':
         lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
                                     args.target
                                 )
-        
-        if args.interpolation_in_frequency:
-            freq_user = numpy.arange(args.frequency_interval[0], args.frequency_interval[-1]+args.interpolation_in_frequency_value, args.interpolation_in_frequency_value)
-        else:
-            freq_user = numpy.arange(args.frequency_interval[0], args.frequency_interval[-1]+args.interpolation_in_frequency_value, 1)
-
-
         time, frequencies, data_final = lazy_loader.get_dask_array(
-            frequency_interval=args.frequency_interval,
+            frequency_interval = args.frequency_interval,
             stokes = args.stokes,
-            apply_rfi_mask=args.apply_rfi_mask,
-            rfi_mask_level=args.rfi_mask_level,
+            apply_rfi_mask = args.apply_rfi_mask,
+            rfi_mask_level = args.rfi_mask_level,
             rfi_mask_level0_percentage = args.rfi_mask_level0_percentage,
             interpolation_in_time = args.interpolation_in_time,
             interpolation_in_time_value = args.interpolation_in_time_value,
@@ -255,16 +278,80 @@ if __name__ == '__main__':
             verbose = args.verbose,
             log_infos = args.log_infos
         )
+        
+        args_list = [(
+                    lazy_loader,
+                    time,
+                    data_final[:,index_freq],
+                    args.normalize_LS,
+                    args.lombscargle_function,
+                    args.log_infos)
+                    for index_freq in range(len(frequencies))
+                    ]
 
-        normalize_LS = False
-        args_list = [(lazy_loader, index_freq, time, data_final, normalize_LS) for index_freq in range(len(frequencies))]
-            
+        #args_list = [(lazy_loader, index_freq, time, data_final, normalize_LS) for index_freq in range(len(frequencies))]
+
+        #time = []
+        #frequencies_ = []
+        #data_final_ = []
+        #f_LS_ = []
+        #power_LS_ = []
         with multiprocessing.Pool() as pool:
             results = pool.map(calculate_LS, args_list)
 
-        f_LS = [result[0] for result in results]
-        power_LS = [result[1] for result in results]
+        if args.verbose:
+            with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
+                with ProgressBar():
+                    #time = [result[0].compute() for result in results]
+                    time = time.compute()
+                with ProgressBar():
+                    #frequencies = [result[1].compute() for result in results]
+                    frequencies = frequencies.compute()
+                with ProgressBar():
+                    #data_final = [result[2].compute() for result in results]
+                    data_final = data_final.compute()
+                with ProgressBar():
+                    #f_LS = [result[3].compute() for result in results]
+                    f_LS = [result[0].compute() for result in results]
+                with ProgressBar():
+                    #power_LS = [result[4].compute() for result in results]
+                    power_LS = [result[1].compute() for result in results]
+            visualize([prof, rprof, cprof,])
 
+        else:
+            #time = [result[0].compute() for result in results]
+            time = time.compute()
+            #frequencies = [result[1].compute() for result in results]
+            frequencies = frequencies.compute()
+            #data_final = [result[2].compute() for result in results]
+            data_final = data_final.compute()
+            #f_LS = [result[3].compute() for result in results]
+            f_LS = [result[0].compute() for result in results]
+            #power_LS = [result[4].compute() for result in results]
+            power_LS = [result[1].compute() for result in results]
+
+      
+            
+       
+         # Concatenating of arrays over observation
+        #time = numpy.concatenate(time_, axis=0)
+        #if numpy.max(frequencies_[-1]) - numpy.max(frequencies_[0]) > 1e-8:
+        #    raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
+        #else:
+        #    frequencies = frequencies_[0]
+        
+        #data_final = numpy.concatenate(data_final_, axis=0)
+        #f_LS = numpy.concatenate(f_LS_, axis=0)
+        #power_LS = numpy.concatenate(power_LS_, axis=0)
+
+
+
+
+        #print(f'time: {time.shape}')
+        #print(f'frequencies: {frequencies.shape}')
+        #print(f'data_final: {data_final.shape}')
+        #print(f'f_LS: {f_LS.shape}')
+        #print(f'power_LS: {power_LS.shape}')
 
         lazy_loader.find_rotation_period_exoplanet()
         T_exoplanet = lazy_loader.exoplanet_period # in days
@@ -277,7 +364,7 @@ if __name__ == '__main__':
                 extra_name = '_masklevel'+str(int(args.rfi_mask_level))
         else:
             extra_name = '_nomaskapplied'
-        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHZ'
+        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz'
 
         if args.save_as_hdf5:
             save_to_hdf(time,
