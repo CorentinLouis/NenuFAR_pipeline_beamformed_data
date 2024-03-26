@@ -17,25 +17,28 @@ from bitarray_to_bytearray import bitarray_to_bytearray
 
 from dask.diagnostics import Profiler, ResourceProfiler, CacheProfiler, visualize, ProgressBar
 
-import logging
-import sys
+
 
 import glob
 
 from typing import Tuple
+import logging
+import sys
+
 
 # ============================================================= #
 # ------------------- Logging configuration ------------------- #
 logging.basicConfig(
-    # filename='lazy_loading_data_LT02.log',
-    # filemode='w',
-    stream=sys.stdout,
-    level=logging.INFO,
-    # format='%(asctime)s -- %(levelname)s: %(message)s',
-    # format='\033[1m%(asctime)s\033[0m | %(levelname)s: \033[34m%(message)s\033[0m',
-    format="%(asctime)s | %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+        filename='outputs/lazy_loading_data_LT02.log',
+        encoding = 'utf8',
+        #filemode='w',
+        #stream=sys.stdout,
+        level=logging.INFO,
+        # format='%(asctime)s -- %(levelname)s: %(message)s',
+        # format='\033[1m%(asctime)s\033[0m | %(levelname)s: \033[34m%(message)s\033[0m',
+        format="%(asctime)s | %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        )
 log = logging.getLogger(__name__)
 
 
@@ -594,6 +597,8 @@ class LazyFITSLoader:
 
         #if self.apply_rfi_mask == True:
         #    rfi_mask = da.concatenate(rfi_mask_tmp_, axis=0)
+        if log_infos:
+            log.info(f"Starting compute of dask arrays")
         if verbose:
             with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
                 with ProgressBar():
@@ -610,7 +615,8 @@ class LazyFITSLoader:
             time = time_interp.compute()
             frequency = frequency.compute()
             data_final = data_final.compute()
-        
+        if log_infos:
+            log.info(f"Ending compute of dask arrays")
         #if self.interpolation_in_time:
         #    time = time_interp
         return time, frequency, data_final
