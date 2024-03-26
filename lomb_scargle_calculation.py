@@ -327,18 +327,30 @@ if __name__ == '__main__':
             log_infos = args.log_infos
         )
 
+        lazy_loader.find_rotation_period_exoplanet()
+        T_exoplanet = lazy_loader.exoplanet_period # in days
+
+        extra_name = ''
+        if args.apply_rfi_mask != None:
+            if args.rfi_mask_level == 0:
+                extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
+            else:
+                extra_name = '_masklevel'+str(int(args.rfi_mask_level))
+        else:
+            extra_name = '_nomaskapplied'
+        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
+
+
         if args.save_as_hdf5:
-            save_to_hdf(time,
-                    frequencies,
-                    data_final,
-                    f_LS,
-                    power_LS,
-                    args.stokes,
-                    args.output_directory,
-                    args.key_project,
-                    args.target,
-                    T_exoplanet,
-                    extra_name = extra_name)
+            save_preliminary_data_to_hdf5(time,
+                                  frequencies,
+                                  data_final,
+                                  args.stokes,
+                                  args.output_directory,
+                                  args.key_project,
+                                  args.target,
+                                  T_exoplanet,
+                                  extra_name = extra_name)
         
         args_list = [(
                     lazy_loader,
@@ -405,19 +417,7 @@ if __name__ == '__main__':
         #print(f'f_LS: {f_LS.shape}')
         #print(f'power_LS: {power_LS.shape}')
 
-        lazy_loader.find_rotation_period_exoplanet()
-        T_exoplanet = lazy_loader.exoplanet_period # in days
-
-        extra_name = ''
-        if args.apply_rfi_mask != None:
-            if args.rfi_mask_level == 0:
-                extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
-            else:
-                extra_name = '_masklevel'+str(int(args.rfi_mask_level))
-        else:
-            extra_name = '_nomaskapplied'
-        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
-
+        
         if args.save_as_hdf5:
             save_to_hdf(time,
                     frequencies,
