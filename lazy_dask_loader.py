@@ -61,7 +61,7 @@ class LazyFITSLoader:
         self.data_fits_file_paths = data_fits_file_paths
         self.rfi_fits_file_paths = rfi_fits_file_paths
         self.exoplanet_name = exoplanet_name
-        self.stokes
+        self.stokes = stokes
         self.client = None
 
     def find_rotation_period_exoplanet(self):
