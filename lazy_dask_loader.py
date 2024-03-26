@@ -116,7 +116,7 @@ class LazyFITSLoader:
                     else:
                         data_ = da.zeros((chunk_size_stokes, chunk_size_frequency, chunk_size_time))
                         for k in range(4):
-                            data_[k, :, :] = da.from_array(hdus[3 + k].data.T, chunks=(chunk_size_frequency, chunk_size_time))
+                            data_[k, :, :] = da.from_array(hdus[3 + k].data, chunks=(chunk_size_frequency, chunk_size_time))
                         data_ = data_.T
                         
                 else:
