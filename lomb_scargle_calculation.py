@@ -146,7 +146,8 @@ def plot_LS_periodogram(frequencies,
     """
     dpi = 500
     if figsize == None:
-        figsize = (15,len(frequencies)*3)
+        print(len(frequencies))
+        figsize = (15,len(frequencies)*2)
     fig, axs = plt.subplots(nrows=len(frequencies), sharex=True, dpi=dpi, figsize = figsize)
 
     if target == 'Jupiter':
@@ -349,7 +350,7 @@ if __name__ == '__main__':
         T_exoplanet = lazy_loader.exoplanet_period # in days
 
         extra_name = ''
-        if args.apply_rfi_mask != None:
+        if args.apply_rfi_mask != False:
             if args.rfi_mask_level == 0:
                 extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
             else:

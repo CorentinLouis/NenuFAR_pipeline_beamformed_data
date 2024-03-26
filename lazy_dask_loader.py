@@ -9,7 +9,7 @@ import math
 
 from scipy.signal import lombscargle as LombScargle_scipy
 from astropy.timeseries import LombScargle as LombScargle_astropy
-from astroML.time_series import lomb_scargle as LombScargle_astroML
+#from astroML.time_series import lomb_scargle as LombScargle_astroML
 
 from scipy.interpolate import interp1d
 
@@ -61,7 +61,7 @@ class LazyFITSLoader:
         self.data_fits_file_paths = data_fits_file_paths
         self.rfi_fits_file_paths = rfi_fits_file_paths
         self.exoplanet_name = exoplanet_name
-        self.stokes
+        self.stokes = stokes
         self.client = None
 
     def find_rotation_period_exoplanet(self):
@@ -109,16 +109,23 @@ class LazyFITSLoader:
                 
                 if log_infos:
                     log.info(f"Start testing fits file {count+1} / {len(self.data_fits_file_paths)}")
-                
-                if datasize <= datasizemax:
-                    data_ = da.from_array(hdus[3].data.T, chunks=(chunk_size_time, chunk_size_frequency, chunk_size_stokes))
-                    k = 0
+                if self.stokes.lower() != 'rm':
+                    if datasize <= datasizemax:
+                        data_ = da.from_array(hdus[3].data.T, chunks=(chunk_size_time, chunk_size_frequency, chunk_size_stokes))
+                        k = 0
+                    else:
+                        data_ = da.zeros((chunk_size_stokes, chunk_size_frequency, chunk_size_time))
+                        for k in range(4):
+                            data_[k, :, :] = da.from_array(hdus[3 + k].data.T, chunks=(chunk_size_frequency, chunk_size_time))
+                        data_ = data_.T
+                        
                 else:
-                    data_ = da.zeros((chunk_size_stokes, chunk_size_frequency, chunk_size_time))
-                    for k in range(4):
-                        data_[k, :, :] = da.from_array(hdus[3 + k].data, chunks=(chunk_size_frequency, chunk_size_time))
-                    data_ = data_.T
-                
+                        if datasize <= datasizemax:
+                            k = 0
+                        else:
+                            k = 3
+                        data_ = da.from_array(hdus[-2].data.T, chunks = (chunk_size_frequency, chunk_size_time))
+                        
 
                 if log_infos:
                     log.info(f"End testing fits file {count+1} / {len(self.data_fits_file_paths)}")
@@ -131,8 +138,11 @@ class LazyFITSLoader:
 
 
                 #frequency_ = hdus[6 + k].data * u.MHz
-                frequency_ = da.from_array((hdus[6 + k].data * u.MHz).value, chunks=chunk_size_frequency)
-                
+                if self.stokes.lower() != 'rm':
+                    frequency_ = da.from_array((hdus[6 + k].data * u.MHz).value, chunks=chunk_size_frequency)
+                else:
+                    frequency_ = da.from_array(hdus[-1].data, chunks=chunk_size_frequency)
+   
                 if log_infos:
                     log.info(f"End computing time & Frequency, file {count+1} / {len(self.data_fits_file_paths)}")
 
@@ -392,7 +402,7 @@ class LazyFITSLoader:
         #self.stokes = stokes
 
 
-        stokes = self.stokes[0]
+        stokes = self.stokes
 
         #if len(i_frequency) == 1:
         #    i_frequency = [i_frequency[0],i_frequency[0]+1]
@@ -412,7 +422,7 @@ class LazyFITSLoader:
         lazy_object_data = self._load_data_from_fits(log_infos=log_infos)
         time_, time_interp_, frequency_, data_, rfi_mask_ = lazy_object_data
 
-        
+
         frequencies =  [(frequency_[i_obs].compute()) for i_obs in range(len(frequency_))]
         
         #return time_, frequencies, data_
@@ -499,50 +509,67 @@ class LazyFITSLoader:
                             data_tmp_ = self._multiply_data(data_tmp_, rfi_mask_to_apply)
                                                 
                 else:
-                    if stokes != 'L':
-                    # This part works!
+                    if stokes == 'RM':
                         if self.interpolation_in_time:
                             chunk_size_time_interp = len(time_interp_[i_obs])
                             data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
+                            for count, index_frequency in enumerate(w_frequency):
+                                    data_tmp_[:,count] = da.map_blocks(
+                                                            self.lazy_interp,
+                                                            time_interp_[i_obs],
+                                                            time_[i_obs],
+                                                            data_[i_obs][:, index_frequency].rechunk((time_[i_obs].chunks[0])),
+                                                            axis = 0,
+                                                            dtype=float                 
+                                                            )
+                                    
+                        else:
+                            data_tmp_ = data_[i_obs][:, w_frequency]
+                    else:
+                        if stokes != 'L':
+                        # This part works!
+                            if self.interpolation_in_time:
+                                chunk_size_time_interp = len(time_interp_[i_obs])
+                                data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
 
-                        # This part is commented, because the rebinning (instaed of interpolating) needs to be tested and double checked
-                            #data_tmp_ = da.map_blocks(
-                            #                        lazy_rebin,
-                            #                        data_[i_obs][:, i_frequency,0],
-                            #                        new_time=time_interp_[i_obs],
-                            #                        new_time_chunks=(time_interp_[i_obs].size),
-                            #                        dtype=float
-                            #                        )
-                            
-                            for count, index_frequency in enumerate(w_frequency):
-                                data_tmp_[:,count] = da.map_blocks(
-                                                        self.lazy_interp,
-                                                        time_interp_[i_obs],
-                                                        time_[i_obs],
-                                                        data_[i_obs][:, index_frequency, stokes_index[stokes]].rechunk((time_[i_obs].chunks[0])),
-                                                        axis = 0,
-                                                        dtype=float                 
-                                                        )
+                            # This part is commented, because the rebinning (instaed of interpolating) needs to be tested and double checked
+                                #data_tmp_ = da.map_blocks(
+                                #                        lazy_rebin,
+                                #                        data_[i_obs][:, i_frequency,0],
+                                #                        new_time=time_interp_[i_obs],
+                                #                        new_time_chunks=(time_interp_[i_obs].size),
+                                #                        dtype=float
+                                #                        )
                                 
-                        else:
-                            data_tmp_ = data_[i_obs][:, w_frequency,  stokes_index[stokes]]
-                    
-                    if stokes == 'L':
-                        data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
-                        if self.interpolation_in_time:
-                            chunk_size_time_interp = len(time_interp_[i_obs])
-                            data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
-                            for count, index_frequency in enumerate(w_frequency):
-                                data_tmp_[:,count] = da.map_blocks(
-                                                        self.lazy_interp,
-                                                        time_interp_[i_obs],
-                                                        time_[i_obs],
-                                                        data_stokes_L[:, count].rechunk((time_[i_obs].chunks[0])),
-                                                        axis = 0,
-                                                        dtype=float                 
-                                                        )
-                        else:
-                            data_tmp_ = data_stokes_L
+                                for count, index_frequency in enumerate(w_frequency):
+                                    data_tmp_[:,count] = da.map_blocks(
+                                                            self.lazy_interp,
+                                                            time_interp_[i_obs],
+                                                            time_[i_obs],
+                                                            data_[i_obs][:, index_frequency, stokes_index[stokes]].rechunk((time_[i_obs].chunks[0])),
+                                                            axis = 0,
+                                                            dtype=float                 
+                                                            )
+                                    
+                            else:
+                                data_tmp_ = data_[i_obs][:, w_frequency,  stokes_index[stokes]]
+                        
+                        if stokes == 'L':
+                            data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                            if self.interpolation_in_time:
+                                chunk_size_time_interp = len(time_interp_[i_obs])
+                                data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
+                                for count, index_frequency in enumerate(w_frequency):
+                                    data_tmp_[:,count] = da.map_blocks(
+                                                            self.lazy_interp,
+                                                            time_interp_[i_obs],
+                                                            time_[i_obs],
+                                                            data_stokes_L[:, count].rechunk((time_[i_obs].chunks[0])),
+                                                            axis = 0,
+                                                            dtype=float                 
+                                                            )
+                            else:
+                                data_tmp_ = data_stokes_L
 
 
                 # Interpolating in frequency        
