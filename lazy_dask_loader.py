@@ -9,7 +9,7 @@ import math
 
 from scipy.signal import lombscargle as LombScargle_scipy
 from astropy.timeseries import LombScargle as LombScargle_astropy
-from astroML.time_series import lomb_scargle as LombScargle_astroML
+#from astroML.time_series import lomb_scargle as LombScargle_astroML
 
 from scipy.interpolate import interp1d
 
