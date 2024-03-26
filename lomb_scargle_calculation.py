@@ -51,7 +51,7 @@ def timestamp_to_datetime(timestamp_table):
     return (result)
 
 
-def read_hdf5_file(input_file, dataset=False):
+def read_hdf5_file(input_file, dataset=False, power_LS = True):
     """
     Reads the LS data from an HDF5 file.
     """
@@ -59,8 +59,10 @@ def read_hdf5_file(input_file, dataset=False):
         time_timestamp = numpy.array(file_hdf5['Time'])
         time_datetime = timestamp_to_datetime(time_timestamp)
         frequency_obs = numpy.array(file_hdf5['Frequency_Obs'])
-        frequency_LS = numpy.array(file_hdf5['Frequency_LS'])
-        power_LS = numpy.array(file_hdf5['power_LS'])
+        if power_LS:
+            frequency_LS = numpy.array(file_hdf5['Frequency_LS'])
+            power_LS = numpy.array(file_hdf5['power_LS'])
+        
         key_project = file_hdf5['key_project'][()].decode('utf-8')
         target = file_hdf5['Target'][()].decode('utf-8')
         stokes = file_hdf5['Stokes'][()].decode('utf-8')    
@@ -69,8 +71,9 @@ def read_hdf5_file(input_file, dataset=False):
         if dataset == True:
             data = numpy.array(file_hdf5['Dataset'])
 
-    if dataset == True:
-        return(time_datetime,
+    if (dataset == True):
+        if (power_LS == True):
+            return(time_datetime,
                 frequency_obs,
                 data,
                 frequency_LS,
@@ -80,8 +83,18 @@ def read_hdf5_file(input_file, dataset=False):
                 target,
                 T_exoplanet
                 )
+        else:
+            return(time_datetime,
+                frequency_obs,
+                data,
+                stokes,
+                key_project,
+                target,
+                T_exoplanet
+                )
     else:
-        return(time_datetime,
+        if (power_LS == True):
+            return(time_datetime,
             frequency_obs,
             frequency_LS,
             power_LS,
@@ -90,7 +103,41 @@ def read_hdf5_file(input_file, dataset=False):
             target,
             T_exoplanet
             )
+        else:
+            return(time_datetime,
+            frequency_obs,
+            stokes,
+            key_project,
+            target,
+            T_exoplanet
+            )
 
+
+def save_preliminary_data_to_hdf5(time,
+                                  frequency,
+                                  data,
+                                  stokes,
+                                  output_directory,
+                                  key_project,
+                                  target,
+                                  T_exoplanet,
+                                  extra_name = ''):
+    
+    """
+    Saves preliminary data to disk as an HDF5 file.
+    """
+    with File(output_directory+'preliminary_data_Stokes-'+stokes[0]+'_LT'+key_project+'_'+target+extra_name+'.hdf5', 'w') as output_file:
+        output_file.create_dataset('Time', data = time)
+        output_file['Time'].attrs.create('format', 'unix')
+        output_file['Time'].attrs.create('units', 's')
+        output_file.create_dataset('Dataset', data = data_final)
+        output_file.create_dataset('Frequency_Obs', data=frequency)
+        output_file['Frequency_Obs'].attrs.create('units', 'MHz')
+        output_file.create_dataset('key_project', data=key_project)
+        output_file.create_dataset('Target', data=target)
+        output_file.create_dataset('T_exoplanet', data=T_exoplanet)
+        output_file['T_exoplanet'].attrs.create('units', 'h')
+        output_file.create_dataset('Stokes', data = stokes)       
 
 def save_to_hdf(time,
                 frequency_obs,
@@ -279,6 +326,19 @@ if __name__ == '__main__':
             verbose = args.verbose,
             log_infos = args.log_infos
         )
+
+        if args.save_as_hdf5:
+            save_to_hdf(time,
+                    frequencies,
+                    data_final,
+                    f_LS,
+                    power_LS,
+                    args.stokes,
+                    args.output_directory,
+                    args.key_project,
+                    args.target,
+                    T_exoplanet,
+                    extra_name = extra_name)
         
         args_list = [(
                     lazy_loader,
