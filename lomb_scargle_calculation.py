@@ -311,7 +311,8 @@ if __name__ == '__main__':
 
         lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
                                     args.stokes,
-                                    args.target
+                                    args.target,
+                                    args.key_project
                                 )
         time, frequencies, data_final = lazy_loader.get_dask_array(
             frequency_interval = args.frequency_interval,
@@ -324,7 +325,8 @@ if __name__ == '__main__':
             interpolation_in_frequency = args.interpolation_in_frequency,
             interpolation_in_frequency_value = args.interpolation_in_frequency_value,
             verbose = args.verbose,
-            log_infos = args.log_infos
+            log_infos = args.log_infos,
+            output_directory = args.output_directory
         )
 
         lazy_loader.find_rotation_period_exoplanet()
