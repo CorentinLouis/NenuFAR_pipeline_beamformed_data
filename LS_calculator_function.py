@@ -8,7 +8,7 @@ def calculate_LS(args):
     pid = os.getpid()
     print(f"Worker PID: {pid}")
     f_LS, power_LS = lazy_loader.LS_calculation(
-                            time, data, normalize_LS, log_infos,lombscargle_function
+                            time, data, normalize_LS, log_infos, lombscargle_function
                             )
     
     return f_LS, power_LS #time, frequencies, data_final, f_LS, power_LS
