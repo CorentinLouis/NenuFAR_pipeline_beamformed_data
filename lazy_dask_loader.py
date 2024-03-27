@@ -599,7 +599,7 @@ class LazyFITSLoader:
                 else:
                     frequency = da.array(frequencies[i_obs][w_frequency])
                 
-                print(time_interp_[i_obs])
+                print(len(time_interp_[i_obs]))
                 print(len(data_tmp_[:,0]))
                 if self.interpolation_in_time:
                     if len(time_interp_[i_obs]) != len(data_tmp_):
