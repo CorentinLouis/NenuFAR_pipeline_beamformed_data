@@ -653,7 +653,10 @@ class LazyFITSLoader:
                     data_final = data_final.compute()
             visualize([prof, rprof, cprof,])
         else:
-            time = time_interp.compute()
+            if self.interpolation_in_time:
+                time = time_interp.compute()
+            else:
+                time = time.compute()
             frequency = frequency.compute()
             data_final = data_final.compute()
         
