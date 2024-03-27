@@ -27,9 +27,9 @@ from typing import Tuple
 # ============================================================= #
 # ------------------- Logging configuration ------------------- #
 logging.basicConfig(
-    # filename='lazy_loading_data_LT02.log',
+    filename='outputs/lazy_loading_data_LT02.log',
     # filemode='w',
-    stream=sys.stdout,
+    #stream=sys.stdout,
     level=logging.INFO,
     # format='%(asctime)s -- %(levelname)s: %(message)s',
     # format='\033[1m%(asctime)s\033[0m | %(levelname)s: \033[34m%(message)s\033[0m',
@@ -599,15 +599,17 @@ class LazyFITSLoader:
                 else:
                     frequency = da.array(frequencies[i_obs][w_frequency])
                 
-                print(len(time_interp_[i_obs]))
-                print(len(data_tmp_[:,0]))
+                if log_infos:
+                    log.info(f"Time_interp_ length: {len(time_interp_[i_obs])} / {len(data_tmp_[:,0])}: data_tmp_ length")
+
                 if self.interpolation_in_time:
-                    if len(time_interp_[i_obs]) != len(data_tmp_):
+                    if len(time_interp_[i_obs]) != len(data_tmp_[:,0]):
                         iobs_wrong.append(i_obs)
                 else:
                     if len(time_[i_obs]) != len(data_tmp_):
                         iobs_wrong.append(i_obs)
                 
+
                 data_final_.append(data_tmp_)
                 #if self.apply_rfi_mask == True:
                 #    rfi_mask_tmp_.append(rfi_mask_to_apply)
@@ -617,6 +619,10 @@ class LazyFITSLoader:
 
             if log_infos:
                 log.info(f"Ending {i_obs+1} / {len(time_)} observation")
+                log.info(f"{len(iobs_wrong)} / {len(time_interp_[i_obs])} observations are wrong")
+                for index_iobswrong in iobs_wrong:
+                    log.info(f"Observations {index_iobswrong} is wrong")
+
         
         if log_infos:
             log.info("End applying mask and interpolating data")
@@ -634,7 +640,7 @@ class LazyFITSLoader:
             filtered_data = [data_final_[i] for i in range(len(data_final_)) if i not in iobs_wrong]
             data_final_ = filtered_data
 
-
+    
         if self.interpolation_in_time:
             time_interp = da.concatenate(time_interp_, axis = 0)
         else:
@@ -648,6 +654,8 @@ class LazyFITSLoader:
         #frequency = frequency_final_[0]
         data_final = da.concatenate(data_final_, axis=0)
 
+        if log_infos:
+                log.info(f"time length: {len(time_interp)} / {len(data_final)}: data_final length")
         extra_name = ''
         if self.apply_rfi_mask != None:
             if self.rfi_mask_level == 0:
