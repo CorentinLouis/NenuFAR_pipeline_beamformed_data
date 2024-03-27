@@ -702,10 +702,23 @@ class LazyFITSLoader:
         if type_LS.lower() == 'astropy':
             #time in jd Time(data)
             if normalized_LS:
-                normalization='standard'
+                normalization='standard' # default normalized_power = power/mean(data**2)
+                normalization='model' # normalized_data = (data - mean(data))/std(data) &  normalized_power = power/mean(normalized_data**2)
             else:
-                normalization=''
-            frequency_LS, power_LS = LombScargle_astropy(time, data, fit_mean = True).autopower(method = 'auto', minimum_frequency = f_LS[0], maximum_frequency = f_LS[-1], samples_per_peak=1000)
+                normalization='standard' #(default)
+            
+            method = 'auto'
+            #method = 'slow' #   This method uses a slower but more accurate implementation of the Lomb-Scargle algorithm suitable for unevenly sampled data. It's based on the work of Lomb (1976) and Scargle (1982).
+                             #   The 'slow' method is suitable for datasets with irregular sampling intervals or when high accuracy is required.
+            #method = 'chi2' #   This method computes the Lomb-Scargle periodogram using a chi-square statistic, which provides a robust estimate of the periodogram for unevenly sampled data.
+                             #   The 'chi2' method is useful when dealing with datasets with significant measurement uncertainties or when you want a statistically robust estimate of the periodogram.
+
+            #fit_mean:  Astropy's Lomb-Scargle implementation fits a constant mean to the data before computing the periodogram. This involves subtracting the mean value from the data, which effectively centers the data around zero.
+            #           Fitting a mean to the data helps remove any systematic offsets or trends that may be present in the data, which can improve the accuracy of the periodogram.
+            #           This option is useful when you want to focus on periodic variations in the data while removing any constant offset or trend.
+            fit_mean = False
+
+            frequency_LS, power_LS = LombScargle_astropy(time, data, fit_mean = fit_mean).autopower(method = method, minimum_frequency = f_LS[0], maximum_frequency = f_LS[-1], samples_per_peak=1000)
             f_LS = frequency_LS
         if log_infos:
             log.info("End Lomb Scargle periodogram computation")
