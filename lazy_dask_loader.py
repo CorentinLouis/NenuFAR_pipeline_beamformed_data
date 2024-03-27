@@ -446,6 +446,7 @@ class LazyFITSLoader:
 
         data_final_ = []
         frequency_final_ = []
+        iobs_wrong = []
         #rfi_mask_tmp_ = []
         
         if log_infos:
@@ -597,12 +598,21 @@ class LazyFITSLoader:
                     #    frequency = da.array(frequencies[i_obs][w_frequency])
                 else:
                     frequency = da.array(frequencies[i_obs][w_frequency])
-                    
+                
+                if self.interpolation_in_time:
+                    if len(time_interp_[i_obs]) != len(data_tmp_):
+                        iobs_wrong.append(i_obs)
+                else:
+                    if len(time_[i_obs]) != len(data_tmp_):
+                        iobs_wrong.append(i_obs)
+                
                 data_final_.append(data_tmp_)
                 #if self.apply_rfi_mask == True:
                 #    rfi_mask_tmp_.append(rfi_mask_to_apply)
                 frequency_final_.append(frequency)
-                
+
+            
+
             if log_infos:
                 log.info(f"Ending {i_obs+1} / {len(time_)} observation")
         
@@ -610,8 +620,24 @@ class LazyFITSLoader:
             log.info("End applying mask and interpolating data")
             
         # Concatenating of arrays over observation
-        time = da.concatenate(time_, axis=0)
-        time_interp = da.concatenate(time_interp_, axis = 0)
+
+        
+        if len(iobs_wrong) !=0:
+            if self.interpolation_in_time:
+                time_filtered = [time_interp_[i] for i in range(len(time_interp_)) if i not in iobs_wrong]
+                time_interp_ = time_filtered
+            else:
+                time_filtered = [time_[i] for i in range(len(time_)) if i not in iobs_wrong]
+                time_ = time_filtered
+            filtered_data = [data_final_[i] for i in range(len(data_final_)) if i not in iobs_wrong]
+            data_final_ = filtered_data
+
+
+        if self.interpolation_in_time:
+            time_interp = da.concatenate(time_interp_, axis = 0)
+        else:
+            time = da.concatenate(time_, axis=0)
+        
         if numpy.max(frequency_final_[-1]) - numpy.max(frequency_final_[0]) > 1e-8:
             raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
         else:
