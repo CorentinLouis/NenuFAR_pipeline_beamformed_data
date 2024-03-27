@@ -666,6 +666,8 @@ class LazyFITSLoader:
             log.info("Ending saving data as dask arrays")
         #if self.apply_rfi_mask == True:
         #    rfi_mask = da.concatenate(rfi_mask_tmp_, axis=0)
+        if log_infos:
+            log.info("Starting computing data")
         if verbose:
             with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
                 with ProgressBar():
@@ -685,7 +687,8 @@ class LazyFITSLoader:
                 time = time.compute()
             frequency = frequency.compute()
             data_final = data_final.compute()
-        
+        if log_infos:
+            log.info("Ending computing data")
         #if self.interpolation_in_time:
         #    time = time_interp
         return time, frequency, data_final
