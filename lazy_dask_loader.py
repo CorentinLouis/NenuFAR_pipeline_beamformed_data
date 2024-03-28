@@ -619,17 +619,23 @@ class LazyFITSLoader:
 
             if log_infos:
                 log.info(f"Ending {i_obs+1} / {len(time_)} observation")
-                log.info(f"{len(iobs_wrong)} / {len(time_interp_[i_obs])} observations are wrong")
-                for index_iobswrong in iobs_wrong:
-                    log.info(f"Observations {index_iobswrong} is wrong")
-
         
         if log_infos:
             log.info("End applying mask and interpolating data")
             
         # Concatenating of arrays over observation
 
-        
+        if log_infos:
+            log.info(f"{len(iobs_wrong)} / {len(time_)} observations are wrong")
+            for index_iobswrong in iobs_wrong:
+                log.info(f"Observation {index_iobswrong} is wrong")
+
+        if log_infos:
+            for iobs in range(len(data_final_)):
+                log.info(f"Time_interp length: {len(time_interp_[iobs])} / {len(data_final_[iobs])}: data_final_ length")
+
+
+
         if len(iobs_wrong) !=0:
             if self.interpolation_in_time:
                 time_filtered = [time_interp_[i] for i in range(len(time_interp_)) if i not in iobs_wrong]
