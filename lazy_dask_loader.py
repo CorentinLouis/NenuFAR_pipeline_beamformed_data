@@ -448,7 +448,6 @@ class LazyFITSLoader:
                 log.info(f"Starting {i_obs+1} / {len(time_)} observation")
             
             w_frequency = numpy.where((frequencies[i_obs] >= frequency_interval[0]) & (frequencies[i_obs] <= frequency_interval[1]))[0]
-            print(f"Frequency min: {frequencies[i_obs].min()} and max: {frequencies[i_obs].max()} in the observation")
             if log_infos:
                 if len(w_frequency) == 0:
                     log.info(f"No observations in the frequency range asked by users")
