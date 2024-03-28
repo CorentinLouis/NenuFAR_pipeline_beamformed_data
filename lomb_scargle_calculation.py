@@ -279,81 +279,119 @@ if __name__ == '__main__':
     parser.add_argument("--figsize", dest = 'figsize', nargs = 2, type = int, default = None, help = "Figure size")
 
     parser.add_argument('--plot_only', dest = 'plot_only', default = False, action = 'store_true', help = "Set this as True if you only want to plot the results from pre-calculated data stored in an hdf5 file")
-    parser.add_argument('--input_hdf5_file', dest = 'input_hdf5_file', default = None, type = str, help = "HDF5 file path containing pre-calculated data. Required if --plot_only is set as True")
+    parser.add_argument('--reprocess_LS_periodogram', dest = 'reprocess_LS_periodogram', default = False, action = 'store_true', help = "Set this as True if you want to read from an hdf5 file data already rebinned, and re-process the Lomb Scargle calculation")
+    parser.add_argument('--input_hdf5_file', dest = 'input_hdf5_file', default = None, type = str, help = "HDF5 file path containing pre-calculated data. Required if --plot_only or --reprocess_LS_periodogram is set as True")
     
     parser.add_argument('--output_directory', dest = 'output_directory', default = './', type = str, help = "Output directory where to save hdf5 and/or plots")
     
     args = parser.parse_args()
 
-    if args.plot_only == False:
-        level_of_preprocessed = ''
+    if (args.plot_only == False):
+        if args.reprocess_LS_periodogram == False:
+            level_of_preprocessed = ''
 
-        if args.key_project == '07':
-            sub_path = "*/*/*/"
-        else:
-            sub_path = f"*/*/*/{args.level_processing}/"
-
-        data_fits_file_paths = [
-                    filename
-                    for filename in glob.iglob(
-                        f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*spectra*.fits',
-                        recursive=True
-                    )
-                ]
-
-        rfi_fits_file_paths = [
-                    filename
-                    for filename in glob.iglob(
-                        f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*rfi*.fits',
-                        recursive=True
-                    )
-                ] 
-
-        lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
-                                    args.stokes,
-                                    args.target,
-                                    args.key_project
-                                )
-        time, frequencies, data_final = lazy_loader.get_dask_array(
-            frequency_interval = args.frequency_interval,
-            stokes = args.stokes,
-            apply_rfi_mask = args.apply_rfi_mask,
-            rfi_mask_level = args.rfi_mask_level,
-            rfi_mask_level0_percentage = args.rfi_mask_level0_percentage,
-            interpolation_in_time = args.interpolation_in_time,
-            interpolation_in_time_value = args.interpolation_in_time_value,
-            interpolation_in_frequency = args.interpolation_in_frequency,
-            interpolation_in_frequency_value = args.interpolation_in_frequency_value,
-            verbose = args.verbose,
-            log_infos = args.log_infos,
-            output_directory = args.output_directory
-        )
-
-        lazy_loader.find_rotation_period_exoplanet()
-        T_exoplanet = lazy_loader.exoplanet_period # in days
-
-        extra_name = ''
-        if args.apply_rfi_mask != None:
-            if args.rfi_mask_level == 0:
-                extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
+            if args.key_project == '07':
+                sub_path = "*/*/*/"
             else:
-                extra_name = '_masklevel'+str(int(args.rfi_mask_level))
-        else:
-            extra_name = '_nomaskapplied'
-        extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
+                sub_path = f"*/*/*/{args.level_processing}/"
+
+            data_fits_file_paths = [
+                        filename
+                        for filename in glob.iglob(
+                            f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*spectra*.fits',
+                            recursive=True
+                        )
+                    ]
+
+            rfi_fits_file_paths = [
+                        filename
+                        for filename in glob.iglob(
+                            f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*rfi*.fits',
+                            recursive=True
+                        )
+                    ] 
+
+            lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
+                                        args.stokes,
+                                        args.target,
+                                        args.key_project
+                                    )
+            time, frequencies, data_final = lazy_loader.get_dask_array(
+                frequency_interval = args.frequency_interval,
+                stokes = args.stokes,
+                apply_rfi_mask = args.apply_rfi_mask,
+                rfi_mask_level = args.rfi_mask_level,
+                rfi_mask_level0_percentage = args.rfi_mask_level0_percentage,
+                interpolation_in_time = args.interpolation_in_time,
+                interpolation_in_time_value = args.interpolation_in_time_value,
+                interpolation_in_frequency = args.interpolation_in_frequency,
+                interpolation_in_frequency_value = args.interpolation_in_frequency_value,
+                verbose = args.verbose,
+                log_infos = args.log_infos,
+                output_directory = args.output_directory
+            )
+
+            lazy_loader.find_rotation_period_exoplanet()
+            T_exoplanet = lazy_loader.exoplanet_period # in days
+
+            extra_name = ''
+            if args.apply_rfi_mask != None:
+                if args.rfi_mask_level == 0:
+                    extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
+                else:
+                    extra_name = '_masklevel'+str(int(args.rfi_mask_level))
+            else:
+                extra_name = '_nomaskapplied'
+            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
 
 
-        if args.save_as_hdf5:
-            save_preliminary_data_to_hdf5(time,
-                                  frequencies,
-                                  data_final,
-                                  args.stokes,
-                                  args.output_directory,
-                                  args.key_project,
-                                  args.target,
-                                  T_exoplanet,
-                                  extra_name = extra_name)
+            if args.save_as_hdf5:
+                save_preliminary_data_to_hdf5(time,
+                                    frequencies,
+                                    data_final,
+                                    args.stokes,
+                                    args.output_directory,
+                                    args.key_project,
+                                    args.target,
+                                    T_exoplanet,
+                                    extra_name = extra_name)
         
+        elif args.reprocess_LS_periodogram == True:
+        
+            if args.input_hdf5_file == None:
+                raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --plot_only is set as True")
+        
+            (time_datetime,
+                frequencies,
+                data_final,
+                stokes,
+                key_project,
+                target,
+                T_exoplanet
+                ) = read_hdf5_file(args.input_hdf5_file, dataset=True, LS_dataset = False)
+            
+            time = datetime_to_timestamp(time_datetime)
+
+            lazy_loader = LazyFITSLoader(None, None, 
+                                        stokes,
+                                        target,
+                                        key_project
+                                    )
+
+            lazy_loader.find_rotation_period_exoplanet()
+
+            extra_name = ''
+            if args.apply_rfi_mask != None:
+                if args.rfi_mask_level == 0:
+                    extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
+                else:
+                    extra_name = '_masklevel'+str(int(args.rfi_mask_level))
+            else:
+                extra_name = '_nomaskapplied'
+            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
+
+
+
         args_list = [(
                     lazy_loader,
                     time,
