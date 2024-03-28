@@ -109,8 +109,6 @@ class LazyFITSLoader:
                 datasize = 4 * nt_ * nf_ * ns_
                 datasizemax = 2**31 - 1
                 
-                if log_infos:
-                    log.info(f"Start testing fits file {count+1} / {len(self.data_fits_file_paths)}")
                 if self.stokes.lower() != 'rm':
                     if datasize <= datasizemax:
                         data_ = da.from_array(hdus[3].data.T, chunks=(chunk_size_time, chunk_size_frequency, chunk_size_stokes))
@@ -128,13 +126,6 @@ class LazyFITSLoader:
                             k = 3
                         data_ = da.from_array(hdus[-2].data.T, chunks = (chunk_size_frequency, chunk_size_time))
                         
-
-                if log_infos:
-                    log.info(f"End testing fits file {count+1} / {len(self.data_fits_file_paths)}")
-
-                if log_infos:
-                    log.info(f"Start computing time & Frequency, file {count+1} / {len(self.data_fits_file_paths)}")
-
                 rfilevel0_ = da.from_array(hdus[4 + k].data.T, chunks=(chunk_size_time, chunk_size_frequency))
                 time_ = da.from_array((Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5 + k].data, format='sec')).value, chunks = chunk_size_time)
 
@@ -144,9 +135,6 @@ class LazyFITSLoader:
                     frequency_ = da.from_array((hdus[6 + k].data * u.MHz).value, chunks=chunk_size_frequency)
                 else:
                     frequency_ = da.from_array(hdus[-1].data, chunks=chunk_size_frequency)
-   
-                if log_infos:
-                    log.info(f"End computing time & Frequency, file {count+1} / {len(self.data_fits_file_paths)}")
 
                 if self.interpolation_in_time:
                     #new_interval = (time_[1]-time_[0])*self.interpolation_in_time_factor
