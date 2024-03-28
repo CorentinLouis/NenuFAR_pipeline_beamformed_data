@@ -460,8 +460,10 @@ class LazyFITSLoader:
                 log.info(f"Starting {i_obs+1} / {len(time_)} observation")
             
             w_frequency = numpy.where((frequencies[i_obs] >= frequency_interval[0]) & (frequencies[i_obs] <= frequency_interval[1]))[0]
+            print(f"Frequency min: {frequencies[i_obs].min()} and max: {frequencies[i_obs].max()} in the observation")
             if log_infos:
-                log.info(f"No observations in the frequency range asked by users")
+                if len(w_frequency) == 0:
+                    log.info(f"No observations in the frequency range asked by users")
 
             if len(w_frequency) != 0:
                 if self.apply_rfi_mask == True:
@@ -646,20 +648,13 @@ class LazyFITSLoader:
 
 
         if len(iobs_wrong) !=0:
-            if self.interpolation_in_time:
-                time_filtered = [time_interp_[i] for i in range(len(time_interp_)) if i not in iobs_wrong]
-                time_interp_ = time_filtered
-            else:
-                time_filtered = [time_[i] for i in range(len(time_)) if i not in iobs_wrong]
-                time_ = time_filtered
+            time_filtered = [time_final_[i] for i in range(len(time_final_)) if i not in iobs_wrong]
+            time_final_ = time_filtered
             filtered_data = [data_final_[i] for i in range(len(data_final_)) if i not in iobs_wrong]
             data_final_ = filtered_data
 
     
-        if self.interpolation_in_time:
-            time_interp = da.concatenate(time_interp_, axis = 0)
-        else:
-            time = da.concatenate(time_, axis=0)
+        time_final = da.concatenate(time_final_, axis = 0)
         
         if numpy.max(frequency_final_[-1]) - numpy.max(frequency_final_[0]) > 1e-8:
             raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
@@ -670,7 +665,7 @@ class LazyFITSLoader:
         data_final = da.concatenate(data_final_, axis=0)
 
         if log_infos:
-                log.info(f"time length: {len(time_interp)} / {len(data_final)}: data_final length")
+                log.info(f"time length: {len(time_final)} / {len(data_final)}: data_final length")
         extra_name = ''
         if self.apply_rfi_mask != None:
             if self.rfi_mask_level == 0:
@@ -683,10 +678,7 @@ class LazyFITSLoader:
 
         if log_infos:
             log.info("Starting saving data as dask arrays")
-        if self.interpolation_in_time:
-            da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_interp, 'frequency': frequency, 'data': data_final})  
-        else:
-            da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5',  {'time': time, 'frequency': frequency, 'data': data_final})  
+        da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_final, 'frequency': frequency, 'data': data_final})  
         if log_infos:
             log.info("Ending saving data as dask arrays")
         #if self.apply_rfi_mask == True:
@@ -696,28 +688,20 @@ class LazyFITSLoader:
         if verbose:
             with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
                 with ProgressBar():
-                    if self.interpolation_in_time:
-                        time = time_interp.compute()
-                    else:
-                        time = time.compute()
+                    time = time_final.compute()
                 with ProgressBar():
                     frequency = frequency.compute()
                 with ProgressBar():
                     data_final = data_final.compute()
             visualize([prof, rprof, cprof,])
         else:
-            if self.interpolation_in_time:
-                time = time_interp.compute()
-            else:
-                time = time.compute()
+            time = time_final.compute()
+
             frequency = frequency.compute()
             data_final = data_final.compute()
         if log_infos:
             log.info("Ending computing data")
-        #if self.interpolation_in_time:
-        #    time = time_interp
         return time, frequency, data_final
-            #return time.compute(), frequency[i_frequency[0]:i_frequency[1]].compute(), data_final_.compute()
 
     def LS_calculation(self, time, data, normalized_LS = False, log_infos = False, type_LS = "scipy"):
         """
