@@ -447,6 +447,7 @@ class LazyFITSLoader:
         data_final_ = []
         frequency_final_ = []
         iobs_wrong = []
+        time_final_ = []
         #rfi_mask_tmp_ = []
         
         if log_infos:
@@ -459,6 +460,9 @@ class LazyFITSLoader:
                 log.info(f"Starting {i_obs+1} / {len(time_)} observation")
             
             w_frequency = numpy.where((frequencies[i_obs] >= frequency_interval[0]) & (frequencies[i_obs] <= frequency_interval[1]))[0]
+            if log_infos:
+                log.info(f"No observations in the frequency range asked by users")
+
             if len(w_frequency) != 0:
                 if self.apply_rfi_mask == True:
                     rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
@@ -614,6 +618,10 @@ class LazyFITSLoader:
                 #if self.apply_rfi_mask == True:
                 #    rfi_mask_tmp_.append(rfi_mask_to_apply)
                 frequency_final_.append(frequency)
+                if self.interpolation_in_time:
+                    time_final_.append(time_interp_[i_obs])
+                else:
+                    time_final_.append(time_[i_obs])
 
             
 
@@ -631,8 +639,9 @@ class LazyFITSLoader:
                 log.info(f"Observation {index_iobswrong} is wrong")
 
         if log_infos:
-            for iobs in range(len(data_final_)):
-                log.info(f"Time_interp length: {len(time_interp_[iobs])} / {len(data_final_[iobs])}: data_final_ length")
+            log.info(f"Number of obs kept: time_final_ length: {len(time_final_)} / {len(data_final_)}: data_final_ length")
+            for iobs_included in range(len(data_final_)):
+                log.info(f"Obs {iobs_included}: Time_final_ length: {len(time_final_[iobs_included])} / {len(data_final_[iobs_included])}: data_final_ length")
 
 
 
