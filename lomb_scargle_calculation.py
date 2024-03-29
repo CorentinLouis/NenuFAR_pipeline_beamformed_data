@@ -37,6 +37,29 @@ import argparse
 from h5py import File
 import datetime
 
+import logging
+
+
+    # ============================================================= #
+# ------------------- Logging configuration ------------------- #
+
+def configure_logging(args):
+    filename = f'{args.output_directory}/lazy_loading_data_LT{args.key_project}_{args.target}_stokes{args.stokes.upper()}.log'
+
+    logging.basicConfig(
+        #filename='outputs/lazy_loading_data_LT02.log',
+        #filename = filename,
+        # filemode='w',
+        stream=sys.stdout,
+        level=logging.INFO,
+        # format='%(asctime)s -- %(levelname)s: %(message)s',
+        # format='\033[1m%(asctime)s\033[0m | %(levelname)s: \033[34m%(message)s\033[0m',
+        format="%(asctime)s | %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    log = logging.getLogger(__name__)
+    return log
+
 
 
 @numpy.vectorize
@@ -311,10 +334,16 @@ if __name__ == '__main__':
                         )
                     ] 
 
+            if args.log_infos:
+                log = configure_logging(args)
+            else:
+                log = None
+
             lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
                                         args.stokes,
                                         args.target,
-                                        args.key_project
+                                        args.key_project,
+                                        log
                                     )
             time, frequencies, data_final = lazy_loader.get_dask_array(
                 frequency_interval = args.frequency_interval,
