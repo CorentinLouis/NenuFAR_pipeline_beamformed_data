@@ -395,7 +395,7 @@ if __name__ == '__main__':
         args_list = [(
                     lazy_loader,
                     time,
-                    data_final[:,index_freq],
+                    20 * numpy.log10(data_final[:, index_freq]) if args.stokes in ('I', 'RM') else data_final[:, index_freq],
                     args.normalize_LS,
                     args.lombscargle_function,
                     args.log_infos)
