@@ -17,26 +17,21 @@ from bitarray_to_bytearray import bitarray_to_bytearray
 
 from dask.diagnostics import Profiler, ResourceProfiler, CacheProfiler, visualize, ProgressBar
 
-import logging
 import sys
 
 import glob
 
 from typing import Tuple
 
-# ============================================================= #
-# ------------------- Logging configuration ------------------- #
-logging.basicConfig(
-    filename='outputs/lazy_loading_data_LT02.log',
-    # filemode='w',
-    #stream=sys.stdout,
-    level=logging.INFO,
-    # format='%(asctime)s -- %(levelname)s: %(message)s',
-    # format='\033[1m%(asctime)s\033[0m | %(levelname)s: \033[34m%(message)s\033[0m',
-    format="%(asctime)s | %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-log = logging.getLogger(__name__)
+import csv
+
+def read_csv_to_dict(file_path):
+    data_dict = []
+    with open(file_path, 'r') as csv_file:
+        csv_reader = csv.DictReader(csv_file, delimiter=';')
+        for row in csv_reader:
+            data_dict.append(row)
+    return data_dict
 
 
 class LazyFITSLoader:
@@ -49,7 +44,8 @@ class LazyFITSLoader:
         rfi_fits_file_paths,
         stokes,
         exoplanet_name,
-        key_project
+        key_project,
+        log
         ):
         """
         Initialize the LazyFITSLoader.
@@ -65,17 +61,69 @@ class LazyFITSLoader:
         self.stokes = stokes
         self.key_project = key_project
         self.client = None
+        self.log = log
+
 
     def find_rotation_period_exoplanet(self):
         """
         Assumed rotation period (in days) for an exoplanet or a star
         """
         
-        exoplanet_period = {
-                            'AD_LEO': 2.23,
-                            'JUPITER':1.7708333333333333 # period of Io, that's what we're looking for (and not droids...)
+        if self.log != None:
+            self.log.info(f"Starting searching for exoplanet and star period")
+
+        exoplanet_infos = [{
+                            'name': 'AD_LEO',
+                            'star_period': 2.23,
+                            'exoplanet_period': 2.23},
+                            {'name':'JUPITER',
+                            'star_period':0.41351,
+                            'exoplanet_period': 1.7708333333333333} # period of Io, that's what we're looking for (and not droids...)
+                            ]
+        def get_exoplanet_info(exoplanet_name, exoplanet_infos):
+            for info in exoplanet_infos:
+                if info['name'].upper() == exoplanet_name:
+                    return info['star_period'], info['exoplanet_period']
+            return None, None  # Return None if exoplanet_name is not found
+
+
+        star_period, exoplanet_period = get_exoplanet_info(self.exoplanet_name.upper(), exoplanet_infos)
+        if self.log != None:
+            self.log.info(f"Searching in pre-defined informations")
+        if star_period is not None and exoplanet_period is not None:
+            self.exoplanet_period = exoplanet_period
+            self.star_period = star_period
+            if self.log != None:
+                self.log.info(f"Got it")
+        else:        
+            if self.log != None:
+                self.log.info(f"Searching in csv file from Palantir")
+            self.exoplanet_period = exoplanet_infos[self.exoplanet_name.upper()]
+            #self.star_period = star_period[self.exoplanet_name.upper()]
+            csv_file = 'exoplanet_informations.csv'
+            exoplanet_info_dict =  read_csv_to_dict(csv_file)
+
+            def get_planet_info_by_name(planet_name, csv_data):
+                for row in csv_data:
+                    if row['name'].upper() == planet_name.upper():
+                        return {
+                                'planet_orbital_period': row['planet_orbital_period'],
+                                'star_rotperiod': row['star_rotperiod']
                             }
-        self.exoplanet_period = exoplanet_period[self.exoplanet_name.upper()]
+                    return None  # Return None if planet_name is not found
+            
+            planet_info = get_planet_info_by_name(self.exoplanet_name, exoplanet_info_dict)
+            if planet_info != None:
+                if self.log != None:
+                    self.log.info(f"Got it")
+                self.exoplanet_period = planet_info['planet_orbital_period']
+                self.star_period = planet_info['star_rotperiod']
+            else:
+                raise ValueError("Exoplanet not found")
+
+        if self.log != None:
+            self.log.info(f"Ending searching for exoplanet and star period")
+
 
     def _load_data_from_fits(self, log_infos = False):
         """
@@ -93,7 +141,7 @@ class LazyFITSLoader:
         # loading data fits file per fits file
         for count, fits_file_path in enumerate(self.data_fits_file_paths):
             if log_infos:
-                log.info(f"Start loading data, file {count+1} / {len(self.data_fits_file_paths)}")
+                self.log.info(f"Start loading data, file {count+1} / {len(self.data_fits_file_paths)}")
             with fits.open(fits_file_path, memmap=True) as hdus:
                 #command = hdus[0].data
                 #param = hdus[1].data
@@ -151,7 +199,7 @@ class LazyFITSLoader:
                     rfi_mask0.append(rfilevel0_)
 
             if log_infos:
-                log.info(f"End loading data, file {count+1} / {len(self.data_fits_file_paths)}")
+                self.log.info(f"End loading data, file {count+1} / {len(self.data_fits_file_paths)}")
 
         return time, time_interp, frequency, data, rfi_mask0
 
@@ -166,11 +214,11 @@ class LazyFITSLoader:
         rfi_mask = []
 
         if log_infos:
-            log.info("Start reading mask level > 0")
+            self.log.info("Start reading mask level > 0")
             
         for count, fits_file_path in enumerate(self.rfi_fits_file_paths):
             if log_infos:
-                log.info(f"Start reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
+                self.log.info(f"Start reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
             
             with fits.open(fits_file_path, memmap=True) as hdus:
                 ndatasize = hdus[2].data
@@ -193,10 +241,10 @@ class LazyFITSLoader:
                     rfi_mask.append(rfimask_level3_)
 
             if log_infos:
-                log.info(f"End reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
+                self.log.info(f"End reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
 
         if log_infos:
-            log.info("End reading mask > 0")
+            self.log.info("End reading mask > 0")
 
         return rfi_mask
 
@@ -394,6 +442,7 @@ class LazyFITSLoader:
 
 
         stokes = self.stokes
+        
 
         #if len(i_frequency) == 1:
         #    i_frequency = [i_frequency[0],i_frequency[0]+1]
@@ -439,18 +488,18 @@ class LazyFITSLoader:
         #rfi_mask_tmp_ = []
         
         if log_infos:
-            log.info("Start applying mask and interpolating data")
+            self.log.info("Start applying mask and interpolating data")
 
 
         for i_obs in range(len(time_)):
             # Interpolation in time and mask applying is done obs. per obs.    
             if log_infos:
-                log.info(f"Starting {i_obs+1} / {len(time_)} observation")
+                self.log.info(f"Starting {i_obs+1} / {len(time_)} observation")
             
             w_frequency = numpy.where((frequencies[i_obs] >= frequency_interval[0]) & (frequencies[i_obs] <= frequency_interval[1]))[0]
             if log_infos:
                 if len(w_frequency) == 0:
-                    log.info(f"No observations in the frequency range asked by users")
+                    self.log.info(f"No observations in the frequency range asked by users")
 
             if len(w_frequency) != 0:
                 if self.apply_rfi_mask == True:
@@ -586,14 +635,14 @@ class LazyFITSLoader:
                     
                     #else:
                     #    if log_infos:
-                    #        log.info("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
+                    #        self.log.info("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
                             #raise Warning("Interpolation in frequency can't be done, because selected frequency range is smaller than the interpolation value")
                     #    frequency = da.array(frequencies[i_obs][w_frequency])
                 else:
                     frequency = da.array(frequencies[i_obs][w_frequency])
                 
                 if log_infos:
-                    log.info(f"Time_interp_ length: {len(time_interp_[i_obs])} / {len(data_tmp_[:,0])}: data_tmp_ length")
+                    self.log.info(f"Time_interp_ length: {len(time_interp_[i_obs])} / {len(data_tmp_[:,0])}: data_tmp_ length")
 
                 if self.interpolation_in_time:
                     if len(time_interp_[i_obs]) != len(data_tmp_[:,0]):
@@ -615,22 +664,22 @@ class LazyFITSLoader:
             
 
             if log_infos:
-                log.info(f"Ending {i_obs+1} / {len(time_)} observation")
+                self.log.info(f"Ending {i_obs+1} / {len(time_)} observation")
         
         if log_infos:
-            log.info("End applying mask and interpolating data")
+            self.log.info("End applying mask and interpolating data")
             
         # Concatenating of arrays over observation
 
         if log_infos:
-            log.info(f"{len(iobs_wrong)} / {len(time_)} observations are wrong")
+            self.log.info(f"{len(iobs_wrong)} / {len(time_)} observations are wrong")
             for index_iobswrong in iobs_wrong:
-                log.info(f"Observation {index_iobswrong} is wrong")
+                self.log.info(f"Observation {index_iobswrong} is wrong")
 
         if log_infos:
-            log.info(f"Number of obs kept: time_final_ length: {len(time_final_)} / {len(data_final_)}: data_final_ length")
+            self.log.info(f"Number of obs kept: time_final_ length: {len(time_final_)} / {len(data_final_)}: data_final_ length")
             for iobs_included in range(len(data_final_)):
-                log.info(f"Obs {iobs_included}: Time_final_ length: {len(time_final_[iobs_included])} / {len(data_final_[iobs_included])}: data_final_ length")
+                self.log.info(f"Obs {iobs_included}: Time_final_ length: {len(time_final_[iobs_included])} / {len(data_final_[iobs_included])}: data_final_ length")
 
 
 
@@ -652,7 +701,7 @@ class LazyFITSLoader:
         data_final = da.concatenate(data_final_, axis=0)
 
         if log_infos:
-                log.info(f"time length: {len(time_final)} / {len(data_final)}: data_final length")
+                self.log.info(f"time length: {len(time_final)} / {len(data_final)}: data_final length")
         extra_name = ''
         if self.apply_rfi_mask != None:
             if self.rfi_mask_level == 0:
@@ -664,14 +713,14 @@ class LazyFITSLoader:
         extra_name = extra_name+'_'+f'{int(frequency_interval[0])}-{int(frequency_interval[1])}MHz'
 
         if log_infos:
-            log.info("Starting saving data as dask arrays")
+            self.log.info("Starting saving data as dask arrays")
         da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_final, 'frequency': frequency, 'data': data_final})  
         if log_infos:
-            log.info("Ending saving data as dask arrays")
+            self.log.info("Ending saving data as dask arrays")
         #if self.apply_rfi_mask == True:
         #    rfi_mask = da.concatenate(rfi_mask_tmp_, axis=0)
         if log_infos:
-            log.info("Starting computing data")
+            self.log.info("Starting computing data")
         if verbose:
             with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
                 with ProgressBar():
@@ -687,7 +736,7 @@ class LazyFITSLoader:
             frequency = frequency.compute()
             data_final = data_final.compute()
         if log_infos:
-            log.info("Ending computing data")
+            self.log.info("Ending computing data")
         return time, frequency, data_final
 
     def LS_calculation(self, time, data, normalized_LS = False, log_infos = False, type_LS = "scipy"):
@@ -718,7 +767,7 @@ class LazyFITSLoader:
             data[data > 0] = 0
         
         if log_infos:
-            log.info("Starting Lomb Scargle periodogram computation")
+            self.log.info("Starting Lomb Scargle periodogram computation")
         
         if type_LS.lower() == 'scipy':
             power_LS = LombScargle_scipy(time, data, f_LS, normalize=normalized_LS)
@@ -746,7 +795,7 @@ class LazyFITSLoader:
             frequency_LS, power_LS = LombScargle_astropy(time, data, fit_mean = fit_mean).autopower(method = method, minimum_frequency = f_LS[0], maximum_frequency = f_LS[-1], samples_per_peak=1000)
             f_LS = frequency_LS
         if log_infos:
-            log.info("End Lomb Scargle periodogram computation")
+            self.log.info("End Lomb Scargle periodogram computation")
 
         return f_LS, power_LS
 
