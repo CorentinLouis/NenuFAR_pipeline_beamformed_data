@@ -426,7 +426,7 @@ if __name__ == '__main__':
                 extra_name = '_nomaskapplied'
             extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
 
-        if only_data_during_night:
+        if args.only_data_during_night:
             for index_time,itime in enumerate(time): 
                 if ((itime/(24*60*60)-int(itime/(24*60*60)))*24> 6) or ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18): 
                     time[index_time] = numpy.nan 
