@@ -229,8 +229,8 @@ def plot_LS_periodogram(frequencies,
         for index_freq in range(len(frequencies)):
             if background:
                 bck = numpy.nanmean(f_LS)
-                sig = numpy.std(f_LS)
-                f_LS = (f_LS-bck)/sig
+                #sig = numpy.std(f_LS)
+                f_LS = (f_LS-bck)#/sig
             axs[index_freq].plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
             #plt.yscale('log')
             axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
