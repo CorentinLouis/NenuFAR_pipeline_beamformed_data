@@ -315,6 +315,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if (args.plot_only == False):
+        if args.log_infos:
+            log = configure_logging(args)
+        else:
+            log = None
         if args.reprocess_LS_periodogram == False:
             level_of_preprocessed = ''
 
@@ -339,10 +343,7 @@ if __name__ == '__main__':
                         )
                     ] 
 
-            if args.log_infos:
-                log = configure_logging(args)
-            else:
-                log = None
+            
 
             lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
                                         args.stokes,
@@ -409,7 +410,8 @@ if __name__ == '__main__':
             lazy_loader = LazyFITSLoader(None, None, 
                                         stokes,
                                         target,
-                                        key_project
+                                        key_project,
+                                        log
                                     )
 
             lazy_loader.find_rotation_period_exoplanet()
