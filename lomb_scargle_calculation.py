@@ -227,9 +227,10 @@ def plot_LS_periodogram(frequencies,
 
     if len(frequencies) > 1:
         for index_freq in range(len(frequencies)):
-            bck = numpy.nanmean(f_LS)
-            sig = numpy.std(f_LS)
-            f_LS = (f_LS-bck)/sig
+            if background:
+                bck = numpy.nanmean(f_LS)
+                sig = numpy.std(f_LS)
+                f_LS = (f_LS-bck)/sig
             axs[index_freq].plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
             #plt.yscale('log')
             axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
@@ -522,7 +523,7 @@ if __name__ == '__main__':
         if args.input_hdf5_file == None:
             raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --plot_only is set as True")
         
-        (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet) = read_hdf5_file(args.input_hdf5_file, dataset = True, LS_dataset = True)
+        (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet) = read_hdf5_file(args.input_hdf5_file, dataset = False, LS_dataset = True)
         plot_LS_periodogram(frequency_obs,
                             frequency_LS,
                             power_LS,
