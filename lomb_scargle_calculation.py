@@ -198,6 +198,7 @@ def plot_LS_periodogram(frequencies,
                         power_LS,
                         stokes,
                         output_directory,
+                        background = False,
                         T_exoplanet = 1.769137786,
                         target = 'Jupiter',
                         key_project = '07',
@@ -226,6 +227,9 @@ def plot_LS_periodogram(frequencies,
 
     if len(frequencies) > 1:
         for index_freq in range(len(frequencies)):
+            bck = numpy.nanmean(f_LS)
+            sig = numpy.std(f_LS)
+            f_LS = (f_LS-bck)/sig
             axs[index_freq].plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
             #plt.yscale('log')
             axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
@@ -296,7 +300,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--lombscargle_function', dest = 'lombscargle_function', type = str, default = 'scipy', help = "LombScargle package to be used. Options are 'scipy' or 'astropy'")
     parser.add_argument('--normalize_LS', dest = 'normalize_LS', default = False, action = 'store_true', help = "Normalization of the Lomb-Scargle periodogram")
-    
+    parser.add_argument('--remove_background_to_LS', dest = 'background', default = False, action='store_true', help="Set True to remove a background to the Lomb Scargle plots (per LS frequency)")
     parser.add_argument('--save_as_hdf5', dest = 'save_as_hdf5', default = False, action = 'store_true', help = "To save results in an hdf5 file")
     parser.add_argument('--plot_results', dest = 'plot_results', default = False, action = 'store_true', help = "To plot and save results")
     parser.add_argument("--figsize", dest = 'figsize', nargs = 2, type = int, default = None, help = "Figure size")
@@ -506,6 +510,7 @@ if __name__ == '__main__':
                                 power_LS,
                                 args.stokes,
                                 args.output_directory,
+                                background = args.background,
                                 T_exoplanet = T_exoplanet,
                                 target = args.target,
                                 key_project = args.key_project,
@@ -523,6 +528,7 @@ if __name__ == '__main__':
                             power_LS,
                             stokes,
                             args.output_directory,
+                            background = args.background,
                             T_exoplanet = T_exoplanet,
                             target = target,
                             key_project = key_project,
