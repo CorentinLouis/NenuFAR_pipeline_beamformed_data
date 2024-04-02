@@ -427,10 +427,14 @@ if __name__ == '__main__':
             extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
 
         if args.only_data_during_night:
+            time_selected = numpy.array([])
+            data_selected = numpy.array([])
             for index_time,itime in enumerate(time): 
-                if ((itime/(24*60*60)-int(itime/(24*60*60)))*24> 6) or ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18): 
-                    time[index_time] = 1e-31 
-                    data_final[index_time,:] = 1e-31
+                if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 6) or ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 18): 
+                    time_selected.append(itime)
+                    data_selected.append(data_selected[index_time, :])
+            time = numpy.array(time_selected)
+            data_final = numpy.array(data_selected)
 
         args_list = [(
                     lazy_loader,
