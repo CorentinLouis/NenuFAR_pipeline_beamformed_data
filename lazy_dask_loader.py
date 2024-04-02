@@ -689,7 +689,12 @@ class LazyFITSLoader:
             filtered_data = [data_final_[i] for i in range(len(data_final_)) if i not in iobs_wrong]
             data_final_ = filtered_data
 
-    
+        if log_infos:
+            self.log.info("Starting saving data as dask arrays")
+        da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_final_, 'frequency': frequency_final_, 'data': data_final_})  
+        if log_infos:
+            self.log.info("Ending saving data as dask arrays")
+
         time_final = da.concatenate(time_final_, axis = 0)
         
         if numpy.max(frequency_final_[-1]) - numpy.max(frequency_final_[0]) > 1e-8:
@@ -712,11 +717,7 @@ class LazyFITSLoader:
             extra_name = '_nomaskapplied'
         extra_name = extra_name+'_'+f'{int(frequency_interval[0])}-{int(frequency_interval[1])}MHz'
 
-        if log_infos:
-            self.log.info("Starting saving data as dask arrays")
-        da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_final, 'frequency': frequency, 'data': data_final})  
-        if log_infos:
-            self.log.info("Ending saving data as dask arrays")
+        
         #if self.apply_rfi_mask == True:
         #    rfi_mask = da.concatenate(rfi_mask_tmp_, axis=0)
         if log_infos:
@@ -765,6 +766,8 @@ class LazyFITSLoader:
             data[data < 0] = 0
         if self.stokes == 'V-':
             data[data > 0] = 0
+        if self.stokes == 'V':
+            data = numpy.abs(data)
         
         if log_infos:
             self.log.info("Starting Lomb Scargle periodogram computation")
