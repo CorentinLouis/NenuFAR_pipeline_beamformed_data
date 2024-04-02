@@ -311,7 +311,7 @@ if __name__ == '__main__':
     parser.add_argument('--input_hdf5_file', dest = 'input_hdf5_file', default = None, type = str, help = "HDF5 file path containing pre-calculated data. Required if --plot_only or --reprocess_LS_periodogram is set as True")
     
     parser.add_argument('--output_directory', dest = 'output_directory', default = './', type = str, help = "Output directory where to save hdf5 and/or plots")
-    
+    parser.add_argument('only_data_during_night', dest = 'only_data_during_night', default = False, action = 'store_true', help = "To select only data during night time")
     args = parser.parse_args()
 
     if (args.plot_only == False):
@@ -426,7 +426,11 @@ if __name__ == '__main__':
                 extra_name = '_nomaskapplied'
             extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
 
-
+        if only_data_during_night:
+            for index_time,itime in enumerate(time): 
+                if ((itime/(24*60*60)-int(itime/(24*60*60)))*24> 6) or ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18): 
+                    time[index_time] = numpy.nan 
+                    data_final[index_time,:] = numpy.nan 
 
         args_list = [(
                     lazy_loader,
