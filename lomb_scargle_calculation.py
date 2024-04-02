@@ -429,8 +429,8 @@ if __name__ == '__main__':
         if args.only_data_during_night:
             for index_time,itime in enumerate(time): 
                 if ((itime/(24*60*60)-int(itime/(24*60*60)))*24> 6) or ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18): 
-                    time[index_time] = numpy.nan 
-                    data_final[index_time,:] = numpy.nan 
+                    time[index_time] = 1e-31 
+                    data_final[index_time,:] = 1e-31
 
         args_list = [(
                     lazy_loader,
