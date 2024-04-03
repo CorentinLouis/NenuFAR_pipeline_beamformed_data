@@ -428,6 +428,7 @@ if __name__ == '__main__':
             extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
 
         if args.only_data_during_night:
+            len_former_time = len(time)
             mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 6) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 18)
             mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
             #n_selected = 0
@@ -443,6 +444,8 @@ if __name__ == '__main__':
             #    log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
             time = ma.masked_array(time, mask=~mask)
             data_final = ma.masked_array(data_final, mask=~mask_2D)
+            if args.log_infos:
+                log.info(f"{time} / {len_former_time} are selected for this night-time observation window")
 
         args_list = [(
                     lazy_loader,
