@@ -430,7 +430,6 @@ if __name__ == '__main__':
         if args.only_data_during_night:
             len_former_time = len(time)
             mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 6) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 18)
-            mask = 1-mask
             mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
             #n_selected = 0
             #mask = numpy.array((len(time)))
@@ -443,10 +442,10 @@ if __name__ == '__main__':
             #        mask[index_time] = True
             #if args.log_infos:
             #    log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
-            time = ma.masked_array(time, mask=mask)
-            data_final = ma.masked_array(data_final, mask=mask_2D)
+            time = ma.masked_array(time, mask=~mask)
+            data_final = ma.masked_array(data_final, mask=~mask_2D)
             if args.log_infos:
-                log.info(f"{len(time)} / {len_former_time} are selected for this night-time observation window")
+                log.info(f"{len(time[mask == 0])} / {len_former_time} are selected for this night-time observation window")
 
         args_list = [(
                     lazy_loader,
