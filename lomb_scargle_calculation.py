@@ -442,7 +442,6 @@ if __name__ == '__main__':
             #if args.log_infos:
             #    log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
             time = ma.masked_array(time, mask=~mask)
-            time = time[mask]
             data_final = ma.masked_array(data_final, mask=~mask_2D)
 
         args_list = [(
