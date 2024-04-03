@@ -445,7 +445,7 @@ if __name__ == '__main__':
             time = ma.masked_array(time, mask=~mask)
             data_final = ma.masked_array(data_final, mask=~mask_2D)
             if args.log_infos:
-                log.info(f"{time} / {len_former_time} are selected for this night-time observation window")
+                log.info(f"{len(time)} / {len_former_time} are selected for this night-time observation window")
 
         args_list = [(
                     lazy_loader,
