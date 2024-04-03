@@ -48,9 +48,9 @@ def configure_logging(args):
 
     logging.basicConfig(
         #filename='outputs/lazy_loading_data_LT02.log',
-        #filename = filename,
-        # filemode='w',
-        stream=sys.stdout,
+        filename = filename,
+        filemode='w',
+        #stream=sys.stdout,
         level=logging.INFO,
         # format='%(asctime)s -- %(levelname)s: %(message)s',
         # format='\033[1m%(asctime)s\033[0m | %(levelname)s: \033[34m%(message)s\033[0m',
@@ -428,7 +428,8 @@ if __name__ == '__main__':
 
         if args.only_data_during_night:
             for index_time,itime in enumerate(time):
-                print((itime/(24*60*60)-int(itime/(24*60*60)))*24)
+                if args.log_infos:
+                    log.info(f"{(itime/(24*60*60)-int(itime/(24*60*60)))*24}")
                 if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 6) and ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18):
                     data_final[index_time,:] = numpy.nan
 
