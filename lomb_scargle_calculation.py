@@ -434,7 +434,7 @@ if __name__ == '__main__':
                 else:
                     n_selected = n_selected+1
             if args.log_infos:
-                log.info(f"{n_selected}")
+                log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
 
         args_list = [(
                     lazy_loader,
