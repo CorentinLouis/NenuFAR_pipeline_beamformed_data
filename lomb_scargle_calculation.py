@@ -428,13 +428,19 @@ if __name__ == '__main__':
 
         if args.only_data_during_night:
             n_selected = 0
+            mask = numpy.array((len(time)))
             for index_time,itime in enumerate(time):
                 if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 6) and ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18):
                     data_final[index_time,:] = numpy.nan
+                    mask[index_time] = False
                 else:
                     n_selected = n_selected+1
+                    mask[index_time] = True
             if args.log_infos:
                 log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
+
+            time = time[mask]
+            data_final = data_final[mask,:]
 
         args_list = [(
                     lazy_loader,
