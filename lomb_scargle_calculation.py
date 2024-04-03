@@ -447,7 +447,7 @@ if __name__ == '__main__':
             time = time[mask == 0]
             data_final = data_final[mask_2D == 0]
             if args.log_infos:
-                log.info(f"{len(time[mask == 1])} / {len_former_time} are selected for this time observation window")
+                log.info(f"{len(time)} / {len_former_time} are selected for this time observation window")
 
         args_list = [(
                     lazy_loader,
