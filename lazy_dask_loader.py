@@ -795,7 +795,7 @@ class LazyFITSLoader:
             #           This option is useful when you want to focus on periodic variations in the data while removing any constant offset or trend.
             fit_mean = False
 
-            frequency_LS, power_LS = LombScargle_astropy(time, data, fit_mean = fit_mean).autopower(method = method, minimum_frequency = f_LS[0], maximum_frequency = f_LS[-1], samples_per_peak=1000)
+            frequency_LS, power_LS = LombScargle_astropy(time, data, fit_mean = fit_mean).autopower(method = method, minimum_frequency = f_LS[0], maximum_frequency = f_LS[-1], samples_per_peak=100)
             f_LS = frequency_LS
         if log_infos:
             self.log.info("End Lomb Scargle periodogram computation")
