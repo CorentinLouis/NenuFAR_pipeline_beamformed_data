@@ -239,7 +239,7 @@ def plot_LS_periodogram(frequencies,
                 axs[index_freq].vlines([T_io*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
                 axs[index_freq].vlines([T_io*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
                 axs[index_freq].vlines([T_jupiter*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{Jup}$")
-                axs[index_freq].vlines([T_jupiter*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Io}$")
+                axs[index_freq].vlines([T_jupiter*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Jup}$")
                 axs[index_freq].vlines([T_synodique*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
                 axs[index_freq].vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
             else:
@@ -429,7 +429,7 @@ if __name__ == '__main__':
 
         if args.only_data_during_night:
             len_former_time = len(time)
-            mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 14) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 15)
+            mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 6) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 18)
             mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
             #n_selected = 0
             #mask = numpy.array((len(time)))
@@ -444,8 +444,8 @@ if __name__ == '__main__':
             #    log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
             #time = ma.masked_array(time, mask=mask)
             #data_final = ma.masked_array(data_final, mask=mask_2D)
-            time = time[mask == 1]
-            data_final = data_final[mask == 1,:]
+            time = time[mask == 0]
+            data_final = data_final[mask == 0,:]
             if args.log_infos:
                 log.info(f"{len(time)} / {len_former_time} are selected for this time observation window")
 
