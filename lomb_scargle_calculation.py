@@ -1,4 +1,5 @@
 import numpy
+import numpy.ma as ma
 from dask import delayed
 import dask.array as da
 from astropy.io import fits
@@ -427,20 +428,22 @@ if __name__ == '__main__':
             extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
 
         if args.only_data_during_night:
-            n_selected = 0
-            mask = numpy.array((len(time)))
-            for index_time,itime in enumerate(time):
-                if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 6) and ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18):
-                    data_final[index_time,:] = numpy.nan
-                    mask[index_time] = False
-                else:
-                    n_selected = n_selected+1
-                    mask[index_time] = True
-            if args.log_infos:
-                log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
-
+            mask = ((time/(24*60*60)-int(time/(24*60*60)))*24 > 6) and ((time/(24*60*60)-int(time/(24*60*60)))*24 < 18)
+            mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
+            #n_selected = 0
+            #mask = numpy.array((len(time)))
+            #for index_time,itime in enumerate(time):
+            #    if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 6) and ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18):
+            #        data_final[index_time,:] = numpy.nan
+            #        mask[index_time] = False
+            #    else:
+            #        n_selected = n_selected+1
+            #        mask[index_time] = True
+            #if args.log_infos:
+            #    log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
+            time = ma.masked_array(time, mask=~mask)
             time = time[mask]
-            data_final = data_final[mask,:]
+            data_final = ma.masked_array(data_final, mask=~mask_2D)
 
         args_list = [(
                     lazy_loader,
