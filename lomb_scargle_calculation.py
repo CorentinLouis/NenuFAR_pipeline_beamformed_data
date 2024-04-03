@@ -428,7 +428,7 @@ if __name__ == '__main__':
             extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
 
         if args.only_data_during_night:
-            mask = ((time/(24*60*60)-int(time/(24*60*60)))*24 > 6) * ((time/(24*60*60)-int(time/(24*60*60)))*24 < 18)
+            mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 6) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 18)
             mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
             #n_selected = 0
             #mask = numpy.array((len(time)))
