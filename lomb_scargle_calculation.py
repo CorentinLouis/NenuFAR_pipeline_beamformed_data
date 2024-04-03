@@ -428,7 +428,7 @@ if __name__ == '__main__':
 
         if args.only_data_during_night:
             for index_time,itime in enumerate(time): 
-                if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 6) or ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18):
+                if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 24) or ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 0):
                     data_final[index_time,:] = numpy.nan
 
         args_list = [(
