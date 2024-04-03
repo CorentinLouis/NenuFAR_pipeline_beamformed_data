@@ -444,8 +444,8 @@ if __name__ == '__main__':
             #    log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
             #time = ma.masked_array(time, mask=mask)
             #data_final = ma.masked_array(data_final, mask=mask_2D)
-            time = time[mask == 0]
-            data_final = data_final[mask == 0,:]
+            time = time[mask == 1]
+            data_final = data_final[mask == 1,:]
             if args.log_infos:
                 log.info(f"{len(time)} / {len_former_time} are selected for this time observation window")
 
