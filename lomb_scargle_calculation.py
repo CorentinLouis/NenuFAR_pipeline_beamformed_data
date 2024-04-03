@@ -432,7 +432,7 @@ if __name__ == '__main__':
                 if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 6) and ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18):
                     data_final[index_time,:] = numpy.nan
                 else:
-                    n_selected =+ 1
+                    n_selected = n_selected+1
             if args.log_infos:
                 log.info(f"{n_selected}")
 
