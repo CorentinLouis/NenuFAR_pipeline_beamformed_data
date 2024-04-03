@@ -429,7 +429,7 @@ if __name__ == '__main__':
 
         if args.only_data_during_night:
             len_former_time = len(time)
-            mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 6) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 18)
+            mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 3) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 20) #(* is and, + is or)
             mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
             #n_selected = 0
             #mask = numpy.array((len(time)))
