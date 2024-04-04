@@ -154,7 +154,7 @@ def save_preliminary_data_to_hdf5(time,
         output_file.create_dataset('Time', data = time)
         output_file['Time'].attrs.create('format', 'unix')
         output_file['Time'].attrs.create('units', 's')
-        output_file.create_dataset('Dataset', data = data_final)
+        output_file.create_dataset('Dataset', data = data)
         output_file.create_dataset('Frequency_Obs', data=frequency)
         output_file['Frequency_Obs'].attrs.create('units', 'MHz')
         output_file.create_dataset('key_project', data=key_project)
