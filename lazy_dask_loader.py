@@ -740,7 +740,7 @@ class LazyFITSLoader:
             self.log.info("Ending computing data")
         return time, frequency, data_final
 
-    def LS_calculation(self, time, data, normalized_LS = False, log_infos = False, type_LS = "scipy"):
+    def LS_calculation(self, time, data, threshold, normalized_LS = False, log_infos = False, type_LS = "scipy"):
         """
         Calculate LombScargle periodogram for given time[nt] and data[nt] computed Dask array (so for a specific frequency and Stokes parameter).
 
@@ -768,6 +768,10 @@ class LazyFITSLoader:
             data[data > 0] = 0
         if self.stokes == 'V':
             data = numpy.abs(data)
+        
+        if threshold != None:
+            data[data < threshold] = 0
+            data[data >= threshold] = 1
         
         if log_infos:
             self.log.info("Starting Lomb Scargle periodogram computation")

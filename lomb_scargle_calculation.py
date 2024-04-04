@@ -289,6 +289,7 @@ if __name__ == '__main__':
     parser.add_argument('--level_processing', dest = 'level_processing', type = str, default = 'L1', help = "Level of processing to be used")
     parser.add_argument('--main_directory_path', dest = 'root', default = './data/', type = str, help = "Main directory path where the observation are stored")
     parser.add_argument('--stokes', dest = 'stokes', default = 'V', type = str, help = "Stokes parameter to be study. Choices: I, V, V+, V-, Q, U, L.")
+    parser.add_argument('--threshold', dest = 'threshold', default = None, type = float, help = "Threshold to be applied for LS")
     parser.add_argument('--apply_rfi_mask', dest = 'apply_rfi_mask', default = False, action = 'store_true', help = "Apply RFI mask")
     parser.add_argument('--rfi_mask_level', dest = 'rfi_mask_level', default = None, type = int, help = "Level of the RFI mask to apply (needed if --apply_rfi_mask True). Option are 0, 1, 2, or 3")
     parser.add_argument('--rfi_mask_level0_percentage', dest = 'rfi_mask_level0_percentage', default = 10, type = float, help = "Percentage (i.e. threshold) of the RFI mask level to apply (needed if --apply_rfi_mask True and rfi_mask_level is 0). Values can be between 0 and 100 %")
@@ -453,6 +454,7 @@ if __name__ == '__main__':
                     lazy_loader,
                     time,
                     20 * numpy.log10(data_final[:, index_freq]) if args.stokes.upper() in ('I', 'RM') else data_final[:, index_freq],
+                    args.threshold,
                     args.normalize_LS,
                     args.lombscargle_function,
                     args.log_infos)
