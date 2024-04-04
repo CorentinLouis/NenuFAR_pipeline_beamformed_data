@@ -768,10 +768,11 @@ class LazyFITSLoader:
             data[data > 0] = 0
         if self.stokes == 'V':
             data = numpy.abs(data)
-        
-        if threshold != None:
-            data[data < threshold] = 0
-            data[data >= threshold] = 1
+        if self.stokes == 'VI':
+            data = numpy.abs(data)
+            if threshold != None:
+                data[data < threshold] = 0
+                data[data >= threshold] = 1
         
         if log_infos:
             self.log.info("Starting Lomb Scargle periodogram computation")
