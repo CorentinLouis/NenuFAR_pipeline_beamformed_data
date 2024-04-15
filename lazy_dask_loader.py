@@ -749,6 +749,17 @@ class LazyFITSLoader:
             filtered_data = [data_final_[i] for i in range(len(data_final_)) if i not in iobs_wrong]
             data_final_ = filtered_data
 
+        extra_name = ''
+        if self.apply_rfi_mask != None:
+            if self.rfi_mask_level == 0:
+                extra_name = '_masklevel'+str(int(self.rfi_mask_level))+'_'+str(int(self.rfi_mask_level0_percentage))+'percents'
+            else:
+                extra_name = '_masklevel'+str(int(self.rfi_mask_level))
+        else:
+            extra_name = '_nomaskapplied'
+        extra_name = extra_name+'_'+f'{int(frequency_interval[0])}-{int(frequency_interval[1])}MHz'
+
+
         if log_infos:
             self.log.info("Starting saving data as dask arrays")
         da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_final_, 'frequency': frequency_final_, 'data': data_final_})  
@@ -767,16 +778,7 @@ class LazyFITSLoader:
 
         if log_infos:
                 self.log.info(f"time length: {len(time_final)} / {len(data_final)}: data_final length")
-        extra_name = ''
-        if self.apply_rfi_mask != None:
-            if self.rfi_mask_level == 0:
-                extra_name = '_masklevel'+str(int(self.rfi_mask_level))+'_'+str(int(self.rfi_mask_level0_percentage))+'percents'
-            else:
-                extra_name = '_masklevel'+str(int(self.rfi_mask_level))
-        else:
-            extra_name = '_nomaskapplied'
-        extra_name = extra_name+'_'+f'{int(frequency_interval[0])}-{int(frequency_interval[1])}MHz'
-
+        
         
         #if self.apply_rfi_mask == True:
         #    rfi_mask = da.concatenate(rfi_mask_tmp_, axis=0)
