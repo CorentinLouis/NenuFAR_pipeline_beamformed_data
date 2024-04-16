@@ -518,7 +518,7 @@ class LazyFITSLoader:
 
         for i_obs in range(len(time_)):
 
-            if data_[i_obs].shape(2) == 4:
+            if data_[i_obs].shape[2] == 4:
                 stokes_index = {
                                 'I': 0,
                                 'Q': 1,
@@ -527,7 +527,7 @@ class LazyFITSLoader:
                                 'V+':3,
                                 'V-':3
                                 }
-            elif data_[i_obs].shape(2) == 3:
+            elif data_[i_obs].shape[2] == 3:
                 stokes_index = {
                                 'I': 0,
                                 'V': 1,
@@ -589,7 +589,7 @@ class LazyFITSLoader:
                                                                             data_[i_obs][:, w_frequency,  stokes_index['I']]),
                                                             rfi_mask_to_apply)       
                     elif stokes == 'L':
-                        if data_[i_obs].shape(2) == 4:
+                        if data_[i_obs].shape[2] == 4:
                             data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
                         else:
                             data_stokes_L = data_[i_obs][:, index_frequency, stokes_index[stokes]]
@@ -647,7 +647,7 @@ class LazyFITSLoader:
                             data_tmp_ = data_[i_obs][:, w_frequency]
 
                     elif stokes == 'L':
-                        if data_[i_obs].shape(2) == 4:
+                        if data_[i_obs].shape[2] == 4:
                             data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
                         else:
                             data_stokes_L = data_[i_obs][:, index_frequency, stokes_index[stokes]]
