@@ -45,7 +45,10 @@ import logging
 # ------------------- Logging configuration ------------------- #
 
 def configure_logging(args):
-    filename = f'{args.output_directory}/lazy_loading_data_LT{args.key_project}_{args.target}_stokes{args.stokes.upper()}.log'
+    filename = f'{args.output_directory}/lazy_loading_data_LT{args.key_project}_{args.target}_stokes{args.stokes.upper()}'
+    if args.apply_rfi_mask:
+        filename = filaname+f'_rfimasklevel{args.rfi_mask_level}'
+    filename = filename+'.log'
 
     logging.basicConfig(
         #filename='outputs/lazy_loading_data_LT02.log',
