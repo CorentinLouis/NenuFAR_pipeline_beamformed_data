@@ -14,6 +14,7 @@ from scipy.interpolate import interp1d
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+from matplotlib.backends.backend_pdf import PdfPages
 
 from bitarray_to_bytearray import bitarray_to_bytearray
 
@@ -109,6 +110,7 @@ def read_hdf5_file(input_file, dataset=False, LS_dataset = True):
         target = file_hdf5['Target'][()].decode('utf-8')
         stokes = file_hdf5['Stokes'][()].decode('utf-8')    
         T_exoplanet = file_hdf5['T_exoplanet'][()]
+        T_star = file_hdf5['T_star'][()]
 
         if dataset == True:
             data = numpy.array(file_hdf5['Dataset'])
@@ -123,7 +125,8 @@ def read_hdf5_file(input_file, dataset=False, LS_dataset = True):
                 stokes,
                 key_project,
                 target,
-                T_exoplanet
+                T_exoplanet,
+                T_star
                 )
         else:
             return(time_datetime,
@@ -132,7 +135,8 @@ def read_hdf5_file(input_file, dataset=False, LS_dataset = True):
                 stokes,
                 key_project,
                 target,
-                T_exoplanet
+                T_exoplanet,
+                T_star
                 )
     else:
         if (LS_dataset == True):
@@ -143,7 +147,8 @@ def read_hdf5_file(input_file, dataset=False, LS_dataset = True):
             stokes,
             key_project,
             target,
-            T_exoplanet
+            T_exoplanet,
+            T_star
             )
         else:
             return(time_datetime,
@@ -151,7 +156,8 @@ def read_hdf5_file(input_file, dataset=False, LS_dataset = True):
             stokes,
             key_project,
             target,
-            T_exoplanet
+            T_exoplanet,
+            T_star
             )
 
 
@@ -163,6 +169,7 @@ def save_preliminary_data_to_hdf5(time,
                                   key_project,
                                   target,
                                   T_exoplanet,
+                                  T_star,
                                   extra_name = ''):
     
     """
@@ -178,6 +185,7 @@ def save_preliminary_data_to_hdf5(time,
         output_file.create_dataset('key_project', data=key_project)
         output_file.create_dataset('Target', data=target)
         output_file.create_dataset('T_exoplanet', data=T_exoplanet)
+        output_file.create_dataset('T_star', data=T_star)
         output_file['T_exoplanet'].attrs.create('units', 'h')
         output_file.create_dataset('Stokes', data = stokes)       
 
@@ -191,6 +199,7 @@ def save_to_hdf(time,
                 key_project,
                 target,
                 T_exoplanet,
+                T_star,
                 extra_name = ''):
     """
     Saves the data to disk as an HDF5 file.
@@ -209,6 +218,7 @@ def save_to_hdf(time,
         output_file.create_dataset('key_project', data=key_project)
         output_file.create_dataset('Target', data=target)
         output_file.create_dataset('T_exoplanet', data=T_exoplanet)
+        output_file.create_dataset('T_star', data=T_star)
         output_file['T_exoplanet'].attrs.create('units', 'h')
         output_file.create_dataset('Stokes', data = stokes)
 
@@ -219,11 +229,13 @@ def plot_LS_periodogram(frequencies,
                         output_directory,
                         background = False,
                         T_exoplanet = 1.769137786,
+                        T_star = 0.995,
                         target = 'Jupiter',
                         key_project = '07',
                         figsize = None,
                         extra_name = '',
-                        filename = None):
+                        filename = None,
+                        log = None):
     """
     INPUT:
         - frequencies: Observation frequencies (in MHz)
@@ -236,69 +248,98 @@ def plot_LS_periodogram(frequencies,
     """
     dpi = 500
     if figsize == None:
-        figsize = (15,len(frequencies)*3)
-    fig, axs = plt.subplots(nrows=len(frequencies), sharex=True, dpi=dpi, figsize = figsize)
+        figsize = (15,5)
+    
+    #plt.show()
+    if filename == None:
+        filename = 'lomb_scargle_periodogram_Stokes-'+stokes+'_LT'+key_project+'_'+target+extra_name
+    else:
+        filename = filename.split('.')[0]
+        
+    pdf_file = PdfPages(output_directory+filename+'.pdf')
 
     if target == 'Jupiter':
         T_io = 1.769137786
         T_jupiter = 9.9250/24
         T_synodique = (T_io*T_jupiter)/abs(T_io-T_jupiter)
 
-    if len(frequencies) > 1:
-        for index_freq in range(len(frequencies)):
-            if background:
-                bck = numpy.nanmean(f_LS)
-                #sig = numpy.std(f_LS)
-                f_LS = (f_LS-bck)#/sig
-            axs[index_freq].plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
-            #plt.yscale('log')
-            axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
-            if target == 'Jupiter':
-                axs[index_freq].vlines([T_io*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
-                axs[index_freq].vlines([T_io*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
-                axs[index_freq].vlines([T_jupiter*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{Jup}$")
-                axs[index_freq].vlines([T_jupiter*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Jup}$")
-                axs[index_freq].vlines([T_synodique*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
-                axs[index_freq].vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
-            else:
-                axs[index_freq].vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{{target}}$")
-                axs[index_freq].vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{{target}}$")
-            axs[index_freq].xaxis.set_minor_locator(MultipleLocator(1))
-            axs[index_freq].xaxis.set_major_locator(MultipleLocator(5))
-            if index_freq == 0:
-                axs[index_freq].legend()
-        axs[index_freq].set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
-        axs[index_freq].set_xlabel("Periodicity (Hours)")
+    #if len(frequencies) > 1:
+    #    for index_freq in range(len(frequencies)):
+    #        if background:
+    #            bck = numpy.nanmean(f_LS)
+    #            #sig = numpy.std(f_LS)
+    #            f_LS = (f_LS-bck)#/sig
+    #        axs[index_freq].plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
+#
+    #        #plt.yscale('log')
+    #        axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
+    #        if target == 'Jupiter':
+    #            axs[index_freq].vlines([T_io*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
+    #            axs[index_freq].vlines([T_io*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
+    #            axs[index_freq].vlines([T_jupiter*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{Jup}$")
+    #            axs[index_freq].vlines([T_jupiter*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Jup}$")
+    #            axs[index_freq].vlines([T_synodique*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
+    #            axs[index_freq].vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
+    #        else:
+    #            axs[index_freq].vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{{target}}$")
+    #            axs[index_freq].vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{{target}}$")
+    #        axs[index_freq].xaxis.set_minor_locator(MultipleLocator(1))
+    #        axs[index_freq].xaxis.set_major_locator(MultipleLocator(5))
+    #        if index_freq == 0:
+    #            axs[index_freq].legend()
+    #    axs[index_freq].set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
+    #    axs[index_freq].set_xlabel("Periodicity (Hours)")
 
-    else:
-        index_freq = 0
+    #else:
+    for index_freq in range(len(frequencies)):
+        if log != None:
+            log.info(f'Plotting frequencies {index_freq} / {len(frequencies)}')
+        #index_freq = 0
+        if background:
+            bck = numpy.nanmean(f_LS)
+            #sig = numpy.std(f_LS)
+            f_LS = (f_LS-bck)#/sig
+        fig, axs = plt.subplots(dpi=dpi, figsize = figsize)
         axs.plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
         axs.set_title(f'Frequency: {frequencies[index_freq]} MHz')
         if target == 'Jupiter':
             axs.vlines([T_io*24],          (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
             axs.vlines([T_io*24/2],        (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
             axs.vlines([T_jupiter*24],     (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{Jup}$")
-            axs.vlines([T_jupiter*24/2],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Io}$")
+            axs.vlines([T_jupiter*24/2],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Jup}$")
             axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
             axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
         else:
-            axs.vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{{target}}$")
-            axs.vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{{target}}$")
+            axs.vlines([T_star*24],     (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{\mathrm{"+target+"}}$")
+            axs.vlines([T_star*24/2],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{"+target+"}}$")
+            if isinstance(T_exoplanet,float):
+                axs.vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{\mathrm{exoplanet}}$")
+                axs.vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{exoplanet}}$")
+                if T_exoplanet-T_star !=0:
+                    T_synodique = (T_exoplanet*T_star)/abs(T_exoplanet-T_star)
+                    axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
+                    axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
+            elif isinstance(T_exoplanet,list):
+                for index, i_exoplanet in enumarate(T_exoplanet):
+                    axs.vlines([i_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{\mathrm{exoplanet "+index+"}}$")
+                    axs.vlines([i_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{exoplanet "+index+"}}$")
+                    if i_exoplanet-T_star !=0:
+                        T_synodique = (i_exoplanet*T_star)/abs(i_exoplanet-T_star)
+                        axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{\mathrm{synodic exoplanet "+index+"}}$")
+                        axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{synodic exoplanet "+index+"}}$")
         axs.xaxis.set_minor_locator(MultipleLocator(1))
         axs.xaxis.set_major_locator(MultipleLocator(5))
         axs.legend()
         axs.set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
         axs.set_xlabel("Periodicity (Hours)")
+        plt.tight_layout()
+        pdf_file.savefig()
+        plt.close()
+        
 
 
-
-    plt.tight_layout()
-    #plt.show()
-    if filename == None:
-        filename = 'lomb_scargle_periodogram_Stokes-'+stokes+'_LT'+key_project+'_'+target+extra_name
-    else:
-        filename = filename.split('.')[0]
-    plt.savefig(output_directory+filename+'.png', dpi = dpi, format = 'png')
+    pdf_file.close()
+    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "Calculation of Lomb Scargle Periodogram for observations of a given radio emitter (planet, exoplanet or star)")
@@ -343,6 +384,8 @@ if __name__ == '__main__':
         if args.reprocess_LS_periodogram == False:
             if args.key_project == '07':
                 sub_path = "*/*/*/"
+                target_type = 'exoplanet'
+                beam_on = ['0']
             else:
                 filename_list_type_target = f'{args.root}/list_type_target.txt'
                 list_type_target = read_csv_to_dict(filename_list_type_target)
@@ -438,9 +481,10 @@ if __name__ == '__main__':
 
             lazy_loader.find_rotation_period_exoplanet()
             T_exoplanet = lazy_loader.exoplanet_period # in days
+            T_star = lazy_loader.star_period
 
             extra_name = ''
-            if args.apply_rfi_mask != None:
+            if args.apply_rfi_mask != False:
                 if args.rfi_mask_level == 0:
                     extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
                 else:
@@ -459,6 +503,7 @@ if __name__ == '__main__':
                                     args.key_project,
                                     args.target,
                                     T_exoplanet,
+                                    T_star,
                                     extra_name = extra_name)
         
         elif args.reprocess_LS_periodogram == True:
@@ -472,7 +517,8 @@ if __name__ == '__main__':
                 stokes,
                 key_project,
                 target,
-                T_exoplanet
+                T_exoplanet,
+                T_star
                 ) = read_hdf5_file(args.input_hdf5_file, dataset=True, LS_dataset = False)
             
             time = datetime_to_timestamp(time_datetime)
@@ -577,6 +623,7 @@ if __name__ == '__main__':
                     args.key_project,
                     args.target,
                     T_exoplanet,
+                    T_star,
                     extra_name = extra_name)
 
         if args.plot_results:
@@ -587,17 +634,19 @@ if __name__ == '__main__':
                                 args.output_directory,
                                 background = args.background,
                                 T_exoplanet = T_exoplanet,
+                                T_star = T_star,
                                 target = args.target,
                                 key_project = args.key_project,
                                 figsize = args.figsize,
-                                extra_name = extra_name)
+                                extra_name = extra_name,
+                                log = log)
 
        
     if args.plot_only:
         if args.input_hdf5_file == None:
             raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --plot_only is set as True")
         
-        (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet) = read_hdf5_file(args.input_hdf5_file, dataset = False, LS_dataset = True)
+        (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet, T_star) = read_hdf5_file(args.input_hdf5_file, dataset = False, LS_dataset = True)
         plot_LS_periodogram(frequency_obs,
                             frequency_LS,
                             power_LS,
@@ -605,7 +654,9 @@ if __name__ == '__main__':
                             args.output_directory,
                             background = args.background,
                             T_exoplanet = T_exoplanet,
+                            T_star = T_star,
                             target = target,
                             key_project = key_project,
                             figsize = args.figsize,
-                            filename = args.input_hdf5_file.split('.')[0].split('/')[-1])
+                            filename = args.input_hdf5_file.split('.')[0].split('/')[-1],
+                            log = log)
