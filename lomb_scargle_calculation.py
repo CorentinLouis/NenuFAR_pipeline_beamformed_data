@@ -361,8 +361,22 @@ if __name__ == '__main__':
                         log.info(f"It seems that the target you are looking for isn't in the '{filename_list_type_target}' file you provide. Please check Target name and/or add the target type ('star' or 'exoplanet') info to the file.")
                     raise RuntimeError(f"It seems that the target you are looking for isn't in the '{filename_list_type_target}' file you provide. Please check Target name and/or add the target type ('star' or 'exoplanet') info to the file.")
 
-
-            data_fits_file_paths_beam_on = [
+            if args.apply_rfi_mask and args.rfi_mask_level > 0:
+                rfi_fits_file_paths_beam_on = [
+                        filename
+                        for beam_number in beam_on
+                            for filename in glob.iglob(
+                                f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.rfi*.fits',
+                            recursive=True
+                        )
+                    ] 
+                
+                data_fits_file_paths_beam_on = [
+                        ifile.split('rfimask')[0]+'spectra'+ifile.split('rfimask')[-1]
+                        for ifile in rfi_fits_file_paths_beam_on
+                    ] 
+            else:       
+                data_fits_file_paths_beam_on = [
                         filename
                         for beam_number in beam_on
                             for filename in glob.iglob(
@@ -371,17 +385,10 @@ if __name__ == '__main__':
                         )
                     ]
 
-
-            rfi_fits_file_paths_beam_on = [
-                        filename
-                        for beam_number in beam_on
-                            for filename in glob.iglob(
-                                f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}rfi*.fits',
-                            recursive=True
-                        )
-                    ] 
+                rfi_fits_file_paths_beam_on = []
+            
             if args.log_infos:
-                log.info(f"{len(data_fits_file_paths_beam_on)} ON beam files will be read (x2 if readers asked for rfi to be removed)")
+                log.info(f"{len(data_fits_file_paths_beam_on)} ON beam files will be read (x2 if users asked for RFI mask > 0 to be removed)")
 
             if args.remove_off_beam:
                 data_fits_file_paths_beam_off = [
@@ -401,7 +408,7 @@ if __name__ == '__main__':
                             filename
                             for beam_number in beam_off
                                 for filename in glob.iglob(
-                                    f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}rfi*.fits',
+                                    f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.rfi*.fits',
                                 recursive=True
                             )
                         ] 
