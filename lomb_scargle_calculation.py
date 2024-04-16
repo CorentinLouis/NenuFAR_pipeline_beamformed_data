@@ -389,6 +389,7 @@ if __name__ == '__main__':
                         ]
 
 
+
                 rfi_fits_file_paths_beam_off = [
                             filename
                             for beam_number in beam_off
@@ -398,6 +399,9 @@ if __name__ == '__main__':
                             )
                         ] 
 
+            if args.log_infos:
+                log.info(f"{len(data_fits_file_paths_beam_on)} ON beam files will be read")
+            
             lazy_loader = LazyFITSLoader(data_fits_file_paths_beam_on, rfi_fits_file_paths_beam_on,
                                         args.stokes,
                                         args.target,
