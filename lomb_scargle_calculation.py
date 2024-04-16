@@ -363,7 +363,7 @@ if __name__ == '__main__':
                         filename
                         for beam_number in beam_on
                             for filename in glob.iglob(
-                                f'{root}/*{key_project}/{sub_path}*{target.upper()}*_{beam_number}.spectra*.fits',
+                                f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.spectra*.fits',
                                 recursive=True
                         )
                     ]
@@ -373,7 +373,7 @@ if __name__ == '__main__':
                         filename
                         for beam_number in beam_on
                             for filename in glob.iglob(
-                                f'{root}/*{key_project}/{sub_path}*{target.upper()}*_{beam_number}rfi*.fits',
+                                f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}rfi*.fits',
                             recursive=True
                         )
                     ] 
@@ -383,7 +383,7 @@ if __name__ == '__main__':
                             filename
                             for beam_number in beam_off
                                 for filename in glob.iglob(
-                                    f'{root}/*{key_project}/{sub_path}*{target.upper()}*_{beam_number}.spectra*.fits',
+                                    f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.spectra*.fits',
                                     recursive=True
                             )
                         ]
@@ -394,7 +394,7 @@ if __name__ == '__main__':
                             filename
                             for beam_number in beam_off
                                 for filename in glob.iglob(
-                                    f'{root}/*{key_project}/{sub_path}*{target.upper()}*_{beam_number}rfi*.fits',
+                                    f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}rfi*.fits',
                                 recursive=True
                             )
                         ] 
