@@ -474,15 +474,7 @@ class LazyFITSLoader:
         #if i_frequency[1] == i_frequency[0]:
         #    i_frequency[1] += 1
         
-        stokes_index = {
-            'RM': 0,
-            'I': 0,
-            'Q': 1,
-            'U': 2,
-            'V': 3,
-            'V+':3,
-            'V-':3
-        }
+        
         
         lazy_object_data = self._load_data_from_fits(log_infos=log_infos)
         time_, time_interp_, frequency_, data_, rfi_mask_ = lazy_object_data
@@ -522,6 +514,28 @@ class LazyFITSLoader:
                 self.log.info("Start interpolating data")
 
         for i_obs in range(len(time_)):
+
+            if data_[i_obs].shape(2) == 4:
+                stokes_index = {
+                                'I': 0,
+                                'Q': 1,
+                                'U': 2,
+                                'V': 3,
+                                'V+':3,
+                                'V-':3
+                                }
+            elif data_[i_obs].shape(2) == 3:
+                stokes_index = {
+                                'I': 0,
+                                'V': 1,
+                                'V+':1,
+                                'V-':1,
+                                'L': 2
+                                }
+            else:
+                stokes_index = {
+                                'RM': 0,
+                                }
             # Interpolation in time and mask applying is done obs. per obs.    
             if log_infos:
                 self.log.info(f"Starting {i_obs+1} / {len(time_)} observation")
@@ -572,7 +586,10 @@ class LazyFITSLoader:
                                                                             data_[i_obs][:, w_frequency,  stokes_index['I']]),
                                                             rfi_mask_to_apply)       
                     elif stokes == 'L':
-                        data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                        if data_[i_obs].shape(2) == 4:
+                            data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                        else:
+                            data_stokes_L = data_[i_obs][:, index_frequency, stokes_index[stokes]]
                         if self.interpolation_in_time:
                             for count, index_frequency in enumerate(w_frequency):
                                 chunk_size_time_interp = len(time_interp_[i_obs])
@@ -589,7 +606,7 @@ class LazyFITSLoader:
                         else:
                             data_tmp_ = self._multiply_data(data_tmp_, rfi_mask_to_apply)
 
-                    else: # elif stokes != 'L':
+                    else: # elif stokes != 'L' & != VI:
                         if self.interpolation_in_time:
                             chunk_size_time_interp = len(time_interp_[i_obs])
                             data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
@@ -627,7 +644,10 @@ class LazyFITSLoader:
                             data_tmp_ = data_[i_obs][:, w_frequency]
 
                     elif stokes == 'L':
-                        data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                        if data_[i_obs].shape(2) == 4:
+                            data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                        else:
+                            data_stokes_L = data_[i_obs][:, index_frequency, stokes_index[stokes]]
                         if self.interpolation_in_time:
                             chunk_size_time_interp = len(time_interp_[i_obs])
                             data_tmp_ = da.zeros((chunk_size_time_interp, len(frequencies[i_obs][w_frequency])))
@@ -664,7 +684,7 @@ class LazyFITSLoader:
                                                          data_[i_obs][:, index_frequency, stokes_index['I']].rechunk((time_[i_obs].chunks[0])))
 
                                                                     
-                    else: # elif stokes != 'L':
+                    else: # elif stokes != 'L' & != 'RM' & != 'VI':
                     # This part works!
                         if self.interpolation_in_time:
                             chunk_size_time_interp = len(time_interp_[i_obs])
