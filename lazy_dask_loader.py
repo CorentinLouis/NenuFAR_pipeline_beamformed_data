@@ -20,6 +20,7 @@ from dask.diagnostics import Profiler, ResourceProfiler, CacheProfiler, visualiz
 import sys
 
 import glob
+from tqdm import tqdm
 
 from typing import Tuple
 
@@ -151,6 +152,9 @@ class LazyFITSLoader:
         data = []
         rfi_mask0 = []
 
+
+        progress_bar = tqdm(total=len(data_fits_file_paths), desc = "Progress loading data from FITS file")
+
         # loading data fits file per fits file
         for count, fits_file_path in enumerate(self.data_fits_file_paths):
             if log_infos:
@@ -214,6 +218,8 @@ class LazyFITSLoader:
             if log_infos:
                 self.log.info(f"End loading data, file {count+1} / {len(self.data_fits_file_paths)}")
 
+            progress_bar.update(1)
+
         return time, time_interp, frequency, data, rfi_mask0
 
 
@@ -229,6 +235,8 @@ class LazyFITSLoader:
         if log_infos:
             self.log.info("Start reading mask level > 0")
             
+        progress_bar = tqdm(total=len(data_fits_file_paths), desc = "Progress loading RFI data from FITS file")
+        
         for count, fits_file_path in enumerate(self.rfi_fits_file_paths):
             if log_infos:
                 self.log.info(f"Start reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
@@ -256,6 +264,8 @@ class LazyFITSLoader:
             if log_infos:
                 self.log.info(f"End reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
 
+            progress_bar.update(1)
+            
         if log_infos:
             self.log.info("End reading mask > 0")
 
@@ -486,6 +496,7 @@ class LazyFITSLoader:
         if (self.apply_rfi_mask == True) and (self.rfi_mask_level > 0):
             rfi_mask_ = self._load_RFI_data_from_fits(log_infos=log_infos)
 
+
         #time_interp_tmp = []
         #for i_obs in range(len(time_)):
         #    if self.interpolation_in_time:
@@ -499,10 +510,14 @@ class LazyFITSLoader:
         iobs_wrong = []
         time_final_ = []
         #rfi_mask_tmp_ = []
-        
-        if log_infos:
-            self.log.info("Start applying mask and interpolating data")
-
+        if self.apply_rfi_mask:
+            progress_bar = tqdm(total=len(time_), desc = "Progress interpolating data and applying mask")
+            if log_infos:
+                self.log.info("Start applying mask and interpolating data")
+        else: 
+            progress_bar = tqdm(total=len(time_), desc = "Progress interpolating data")
+            if log_infos:
+                self.log.info("Start interpolating data")
 
         for i_obs in range(len(time_)):
             # Interpolation in time and mask applying is done obs. per obs.    
@@ -518,17 +533,17 @@ class LazyFITSLoader:
                 if self.apply_rfi_mask == True:
                     rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
 
-#2024-03-18 18:02:16 | INFO: Starting 77 / 154 observation
-#/data/clouis/LT02/NenuFAR_pipeline_beamformed_data/lazy_dask_loader.py:362: PerformanceWarning: Slicing is producing a large chunk. To accept the large
-#chunk and silence this warning, set the option
-#    >>> with dask.config.set(**{'array.slicing.split_large_chunks': False}):
-#    ...     array[indexer]
-#
-#To avoid creating the large chunks, set the option
-#    >>> with dask.config.set(**{'array.slicing.split_large_chunks': True}):
-#    ...     array[indexer]
-#  rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
-#2024-03-18 18:02:21 | INFO: Ending 77 / 154 observation
+            #2024-03-18 18:02:16 | INFO: Starting 77 / 154 observation
+            #/data/clouis/LT02/NenuFAR_pipeline_beamformed_data/lazy_dask_loader.py:362: PerformanceWarning: Slicing is producing a large chunk. To accept the large
+            #chunk and silence this warning, set the option
+            #    >>> with dask.config.set(**{'array.slicing.split_large_chunks': False}):
+            #    ...     array[indexer]
+            #
+            #To avoid creating the large chunks, set the option
+            #    >>> with dask.config.set(**{'array.slicing.split_large_chunks': True}):
+            #    ...     array[indexer]
+            #  rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
+            #2024-03-18 18:02:21 | INFO: Ending 77 / 154 observation
 
                     if self.rfi_mask_level == 0:
                         rfi_mask_to_apply[rfi_mask_to_apply >= self.rfi_mask_level0_percentage/100] = 1
@@ -726,8 +741,18 @@ class LazyFITSLoader:
             if log_infos:
                 self.log.info(f"Ending {i_obs+1} / {len(time_)} observation")
         
-        if log_infos:
-            self.log.info("End applying mask and interpolating data")
+            progress_bar.update(1)
+
+
+
+        if self.apply_rfi_mask:
+            if log_infos:
+                self.log.info("End applying mask and interpolating data")
+        else: 
+            
+            if log_infos:
+                self.log.info("End interpolating data")
+            
             
         # Concatenating of arrays over observation
 
