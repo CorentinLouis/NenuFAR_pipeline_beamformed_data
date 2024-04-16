@@ -218,7 +218,8 @@ class LazyFITSLoader:
             if log_infos:
                 self.log.info(f"End loading data, file {count+1} / {len(self.data_fits_file_paths)}")
 
-            progress_bar.update(1)
+            progress_bar.update()
+        progress_bar.close()
 
         return time, time_interp, frequency, data, rfi_mask0
 
@@ -264,8 +265,9 @@ class LazyFITSLoader:
             if log_infos:
                 self.log.info(f"End reading RFI data (mask > 0), file {count+1} / {len(self.rfi_fits_file_paths)}")
 
-            progress_bar.update(1)
-            
+            progress_bar.update()
+        
+        progress_bar.close()
         if log_infos:
             self.log.info("End reading mask > 0")
 
@@ -741,8 +743,9 @@ class LazyFITSLoader:
             if log_infos:
                 self.log.info(f"Ending {i_obs+1} / {len(time_)} observation")
         
-            progress_bar.update(1)
-
+            progress_bar.update()
+        
+        progress_bar.close()
 
 
         if self.apply_rfi_mask:
