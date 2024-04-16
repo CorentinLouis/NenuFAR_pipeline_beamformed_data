@@ -153,7 +153,7 @@ class LazyFITSLoader:
         rfi_mask0 = []
 
 
-        progress_bar = tqdm(total=len(data_fits_file_paths), desc = "Progress loading data from FITS file")
+        progress_bar = tqdm(total=len(self.data_fits_file_paths), desc = "Progress loading data from FITS file")
 
         # loading data fits file per fits file
         for count, fits_file_path in enumerate(self.data_fits_file_paths):
@@ -235,7 +235,7 @@ class LazyFITSLoader:
         if log_infos:
             self.log.info("Start reading mask level > 0")
             
-        progress_bar = tqdm(total=len(data_fits_file_paths), desc = "Progress loading RFI data from FITS file")
+        progress_bar = tqdm(total=len(self.rfi_fits_file_paths), desc = "Progress loading RFI data from FITS file")
         
         for count, fits_file_path in enumerate(self.rfi_fits_file_paths):
             if log_infos:
