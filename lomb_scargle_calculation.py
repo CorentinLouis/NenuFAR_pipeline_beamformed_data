@@ -61,6 +61,21 @@ def configure_logging(args):
     log = logging.getLogger(__name__)
     return log
 
+def get_planet_target_type(planet_name, list_type_target):
+    for row in list_type_target:
+        if row['name'].upper() == planet_name.upper():
+            return row['target_type']
+
+import csv
+def read_csv_to_dict(file_path):
+    data_dict = []
+    with open(file_path, 'r') as csv_file:
+        csv_reader = csv.DictReader(csv_file, delimiter=';')
+        for row in csv_reader:
+            data_dict.append(row)
+    return data_dict
+
+
 
 
 @numpy.vectorize
@@ -293,6 +308,7 @@ if __name__ == '__main__':
     parser.add_argument('--apply_rfi_mask', dest = 'apply_rfi_mask', default = False, action = 'store_true', help = "Apply RFI mask")
     parser.add_argument('--rfi_mask_level', dest = 'rfi_mask_level', default = None, type = int, help = "Level of the RFI mask to apply (needed if --apply_rfi_mask True). Option are 0, 1, 2, or 3")
     parser.add_argument('--rfi_mask_level0_percentage', dest = 'rfi_mask_level0_percentage', default = 10, type = float, help = "Percentage (i.e. threshold) of the RFI mask level to apply (needed if --apply_rfi_mask True and rfi_mask_level is 0). Values can be between 0 and 100 %")
+    parser.add_argument('--remove_off_beam', dest = 'remove_off_beam', default = False, action = 'store_true', help = "Set as True to remove off beam(s) observation to on beam(s)")
     parser.add_argument('--interpolation_in_time', dest = 'interpolation_in_time', default = False, action = 'store_true', help = "Interpolate in time")
     parser.add_argument('--interpolation_in_time_value', dest = 'interpolation_in_time_value', default = 1, type = float, help = "Value in second over which data need to be interpolated")
     parser.add_argument('--interpolation_in_frequency', dest = 'interpolation_in_frequency', default = False, action = 'store_true', help = "Interpolate in time")
@@ -315,39 +331,74 @@ if __name__ == '__main__':
     parser.add_argument('--output_directory', dest = 'output_directory', default = './', type = str, help = "Output directory where to save hdf5 and/or plots")
     parser.add_argument('--only_data_during_night', dest = 'only_data_during_night', default = False, action = 'store_true', help = "To select only data during night time")
     args = parser.parse_args()
-
+    
     if (args.plot_only == False):
         if args.log_infos:
             log = configure_logging(args)
         else:
             log = None
         if args.reprocess_LS_periodogram == False:
-            level_of_preprocessed = ''
-
             if args.key_project == '07':
                 sub_path = "*/*/*/"
             else:
+                filename_list_type_target = f'{args.root}/list_type_target.txt'
+                list_type_target = read_csv_to_dict(filename_list_type_target)
+                target_type = get_planet_target_type('AD_LEO', list_type_target)
+
                 sub_path = f"*/*/*/{args.level_processing}/"
 
-            data_fits_file_paths = [
+                if target_type == 'star':
+                    beam_on = ['0','1']
+                    beam_off = ['2', '3']
+                elif target_type == 'exoplanet':
+                    beam_on = ['0']
+                    beam_off = ['1','2', '3']
+                else:
+                    if args.log_infos:
+                        log.info(f"It seems that the target you are looking for isn't in the '{filename_list_type_target}' file you provide. Please check Target name and/or add the target type ('star' or 'exoplanet') info to the file.")
+                    raise RuntimeError(f"It seems that the target you are looking for isn't in the '{filename_list_type_target}' file you provide. Please check Target name and/or add the target type ('star' or 'exoplanet') info to the file.")
+
+
+            data_fits_file_paths_beam_on = [
                         filename
-                        for filename in glob.iglob(
-                            f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*spectra*.fits',
-                            recursive=True
+                        for beam_number in beam_on
+                            for filename in glob.iglob(
+                                f'{root}/*{key_project}/{sub_path}*{target.upper()}*_{beam_number}.spectra*.fits',
+                                recursive=True
                         )
                     ]
 
-            rfi_fits_file_paths = [
+
+            rfi_fits_file_paths_beam_on = [
                         filename
-                        for filename in glob.iglob(
-                            f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*rfi*.fits',
+                        for beam_number in beam_on
+                            for filename in glob.iglob(
+                                f'{root}/*{key_project}/{sub_path}*{target.upper()}*_{beam_number}rfi*.fits',
                             recursive=True
                         )
                     ] 
 
-            
+            if remove_off_beam:
+                data_fits_file_paths_beam_off = [
+                            filename
+                            for beam_number in beam_off
+                                for filename in glob.iglob(
+                                    f'{root}/*{key_project}/{sub_path}*{target.upper()}*_{beam_number}.spectra*.fits',
+                                    recursive=True
+                            )
+                        ]
 
-            lazy_loader = LazyFITSLoader(data_fits_file_paths, rfi_fits_file_paths, 
+
+                rfi_fits_file_paths_beam_off = [
+                            filename
+                            for beam_number in beam_off
+                                for filename in glob.iglob(
+                                    f'{root}/*{key_project}/{sub_path}*{target.upper()}*_{beam_number}rfi*.fits',
+                                recursive=True
+                            )
+                        ] 
+
+            lazy_loader = LazyFITSLoader(data_fits_file_paths_beam_on, rfi_fits_file_paths_beam_on,
                                         args.stokes,
                                         args.target,
                                         args.key_project,
@@ -432,19 +483,6 @@ if __name__ == '__main__':
             len_former_time = len(time)
             mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
             mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
-            #n_selected = 0
-            #mask = numpy.array((len(time)))
-            #for index_time,itime in enumerate(time):
-            #    if ((itime/(24*60*60)-int(itime/(24*60*60)))*24 > 6) and ((itime/(24*60*60)-int(itime/(24*60*60)))*24 < 18):
-            #        data_final[index_time,:] = numpy.nan
-            #        mask[index_time] = False
-            #    else:
-            #        n_selected = n_selected+1
-            #        mask[index_time] = True
-            #if args.log_infos:
-            #    log.info(f"{n_selected} / {len(time)} are selected for this night-time observation window")
-            #time = ma.masked_array(time, mask=mask)
-            #data_final = ma.masked_array(data_final, mask=mask_2D)
             time = time[mask == 0]
             data_final = data_final[mask == 0,:]
             if args.log_infos:
@@ -461,13 +499,7 @@ if __name__ == '__main__':
                     for index_freq in range(len(frequencies))
                     ]
 
-        #args_list = [(lazy_loader, index_freq, time, data_final, normalize_LS) for index_freq in range(len(frequencies))]
 
-        #time = []
-        #frequencies_ = []
-        #data_final_ = []
-        #f_LS_ = []
-        #power_LS_ = []
         with multiprocessing.Pool() as pool:
             results = pool.map(calculate_LS, args_list)
 
