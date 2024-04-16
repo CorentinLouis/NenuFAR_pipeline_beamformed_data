@@ -377,6 +377,8 @@ if __name__ == '__main__':
                             recursive=True
                         )
                     ] 
+            if args.log_infos:
+                log.info(f"{len(data_fits_file_paths_beam_on)} ON beam files will be read (x2 if readers asked for rfi to be removed)")
 
             if args.remove_off_beam:
                 data_fits_file_paths_beam_off = [
@@ -388,6 +390,8 @@ if __name__ == '__main__':
                             )
                         ]
 
+                if args.log_infos:
+                    log.info(f"{len(data_fits_file_paths_beam_on)} OFF beam files will be read (x2 if readers asked for rfi to be removed)")
 
 
                 rfi_fits_file_paths_beam_off = [
@@ -399,8 +403,7 @@ if __name__ == '__main__':
                             )
                         ] 
 
-            if args.log_infos:
-                log.info(f"{len(data_fits_file_paths_beam_on)} ON beam files will be read")
+            
             
             lazy_loader = LazyFITSLoader(data_fits_file_paths_beam_on, rfi_fits_file_paths_beam_on,
                                         args.stokes,
