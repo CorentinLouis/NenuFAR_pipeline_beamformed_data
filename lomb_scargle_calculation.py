@@ -378,7 +378,7 @@ if __name__ == '__main__':
                         )
                     ] 
 
-            if remove_off_beam:
+            if args.remove_off_beam:
                 data_fits_file_paths_beam_off = [
                             filename
                             for beam_number in beam_off
