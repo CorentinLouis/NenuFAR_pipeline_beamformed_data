@@ -657,6 +657,12 @@ if __name__ == '__main__':
         if args.input_hdf5_file == None:
             raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --plot_only is set as True")
         
+
+        if args.log_infos:
+            log = configure_logging(args)
+        else:
+            log = None
+            
         (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet, T_star) = read_hdf5_file(args.input_hdf5_file, dataset = False, LS_dataset = True)
         plot_LS_periodogram(frequency_obs,
                             frequency_LS,
