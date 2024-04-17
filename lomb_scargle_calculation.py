@@ -233,6 +233,7 @@ def plot_LS_periodogram(frequencies,
                         target = 'Jupiter',
                         key_project = '07',
                         figsize = None,
+                        x_limits = None,
                         extra_name = '',
                         filename = None,
                         log = None):
@@ -248,7 +249,7 @@ def plot_LS_periodogram(frequencies,
     """
     dpi = 500
     if figsize == None:
-        figsize = (15,5)
+        figsize = (25,8)
     
     #plt.show()
     if filename == None:
@@ -340,8 +341,11 @@ def plot_LS_periodogram(frequencies,
         axs.xaxis.set_minor_locator(MultipleLocator(1))
         axs.xaxis.set_major_locator(MultipleLocator(5))
         axs.legend()
-        #axs.set_xlim([(numpy.mean(T_exoplanet)/10)*24,(numpy.mean(T_exoplanet)*2)*24])
-        axs.set_xlim(numpy.min(1/(f_LS[index_freq])/60/60), numpy.max(1/(f_LS[index_freq])/60/60))
+        if x_limits == None:
+            #axs.set_xlim([(numpy.mean(T_exoplanet)/10)*24,(numpy.mean(T_exoplanet)*2)*24])
+            axs.set_xlim(numpy.min(1/(f_LS[index_freq])/60/60), numpy.max(1/(f_LS[index_freq])/60/60))
+        else:
+            axs.set_xlim(x_limits[0], x_limits[-1])
         axs.set_xlabel("Periodicity (Hours)")
         plt.tight_layout()
         pdf_file.savefig()
