@@ -741,8 +741,8 @@ class LazyFITSLoader:
                 else:
                     frequency = da.array(frequencies[i_obs][w_frequency])
                 
-                if log_infos:
-                    self.log.info(f"Time_interp_ length: {len(time_interp_[i_obs])} / {len(data_tmp_[:,0])}: data_tmp_ length")
+                #if log_infos:
+                #    self.log.info(f"Time_interp_ length: {len(time_interp_[i_obs])} / {len(data_tmp_[:,0])}: data_tmp_ length")
 
                 if self.interpolation_in_time:
                     if len(time_interp_[i_obs]) != len(data_tmp_[:,0]):
@@ -787,10 +787,10 @@ class LazyFITSLoader:
             for index_iobswrong in iobs_wrong:
                 self.log.info(f"Observation {index_iobswrong} is wrong")
 
-        if log_infos:
-            self.log.info(f"Number of obs kept: time_final_ length: {len(time_final_)} / {len(data_final_)}: data_final_ length")
-            for iobs_included in range(len(data_final_)):
-                self.log.info(f"Obs {iobs_included}: Time_final_ length: {len(time_final_[iobs_included])} / {len(data_final_[iobs_included])}: data_final_ length")
+        #if log_infos:
+            #self.log.info(f"Number of obs kept: time_final_ length: {len(time_final_)} / {len(data_final_)}: data_final_ length")
+            #for iobs_included in range(len(data_final_)):
+            #    self.log.info(f"Obs {iobs_included}: Time_final_ length: {len(time_final_[iobs_included])} / {len(data_final_[iobs_included])}: data_final_ length")
 
 
 
@@ -829,7 +829,7 @@ class LazyFITSLoader:
 
 
         if log_infos:
-                self.log.info(f"time length: {len(time_final)} / {len(data_final)}: data_final length")
+                self.log.info(f"Number of time step after interpolation / compared to time step in the data set (safety check) => time length: {len(time_final)} / {len(data_final)}: data_final length")
         
         
         #if self.apply_rfi_mask == True:
