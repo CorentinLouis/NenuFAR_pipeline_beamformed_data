@@ -821,11 +821,11 @@ class LazyFITSLoader:
         #frequency = frequency_final_[0]
         data_final = da.concatenate(data_final_, axis=0)
 
-        if log_infos:
-            self.log.info("Starting saving data as dask arrays")
-        da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_final, 'frequency': frequency, 'data': data_final})  
-        if log_infos:
-            self.log.info("Ending saving data as dask arrays")
+        #if log_infos:
+        #    self.log.info("Starting saving data as dask arrays")
+        #da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_final, 'frequency': frequency, 'data': data_final})  
+        #if log_infos:
+        #    self.log.info("Ending saving data as dask arrays")
 
 
         if log_infos:
