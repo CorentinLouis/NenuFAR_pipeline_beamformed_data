@@ -340,7 +340,7 @@ def plot_LS_periodogram(frequencies,
         axs.xaxis.set_minor_locator(MultipleLocator(1))
         axs.xaxis.set_major_locator(MultipleLocator(5))
         axs.legend()
-        axs.set_xlim([(numpymean(T_exoplanet)/10)*24,(numpy.mean(T_exoplanet)*2)*24])
+        axs.set_xlim([(numpy.mean(T_exoplanet)/10)*24,(numpy.mean(T_exoplanet)*2)*24])
         axs.set_xlabel("Periodicity (Hours)")
         plt.tight_layout()
         pdf_file.savefig()
