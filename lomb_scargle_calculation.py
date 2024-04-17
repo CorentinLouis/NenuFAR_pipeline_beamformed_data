@@ -330,7 +330,7 @@ def plot_LS_periodogram(frequencies,
                     axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
                     axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
             elif isinstance(T_exoplanet,list):
-                for index, i_exoplanet in enumarate(T_exoplanet):
+                for index, i_exoplanet in enumerate(T_exoplanet):
                     axs.vlines([i_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{\mathrm{exoplanet "+index+"}}$")
                     axs.vlines([i_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{exoplanet "+index+"}}$")
                     if i_exoplanet-T_star !=0:
