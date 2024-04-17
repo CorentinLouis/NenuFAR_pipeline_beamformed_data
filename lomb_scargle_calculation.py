@@ -340,7 +340,7 @@ def plot_LS_periodogram(frequencies,
         axs.xaxis.set_minor_locator(MultipleLocator(1))
         axs.xaxis.set_major_locator(MultipleLocator(5))
         axs.legend()
-        axs.set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
+        axs.set_xlim([(numpymean(T_exoplanet)/10)*24,(numpy.mean(T_exoplanet)*2)*24])
         axs.set_xlabel("Periodicity (Hours)")
         plt.tight_layout()
         pdf_file.savefig()
@@ -662,7 +662,7 @@ if __name__ == '__main__':
             log = configure_logging(args)
         else:
             log = None
-            
+
         (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet, T_star) = read_hdf5_file(args.input_hdf5_file, dataset = False, LS_dataset = True)
         plot_LS_periodogram(frequency_obs,
                             frequency_LS,
