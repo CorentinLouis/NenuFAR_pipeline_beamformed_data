@@ -89,7 +89,8 @@ class LazyFITSLoader:
                             {
                             'name': 'TAU_BOOTIS',
                             'star_period': 16.787098628096576,
-                            'exoplanet_period': 0.14700659746948372},
+                            'exoplanet_period': 0.14700659746948372
+                            },
                             {'name':'JUPITER',
                             'star_period':0.41351,
                             'exoplanet_period': 1.7708333333333333} # period of Io, that's what we're looking for (and not droids...)
