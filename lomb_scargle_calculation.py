@@ -291,6 +291,15 @@ def plot_LS_periodogram(frequencies,
     #    axs[index_freq].set_xlabel("Periodicity (Hours)")
 
     #else:
+
+    target_ = target.split('_')
+    target = ''
+    for index, itarget in enumerate(target_): 
+        if index == 0: 
+            target = f'{itarget}' 
+        else: 
+            target = f'{target} {itarget}' 
+
     for index_freq in range(len(frequencies)):
         if log != None:
             log.info(f'Plotting frequency {index_freq+1} / {len(frequencies)}')
@@ -302,6 +311,7 @@ def plot_LS_periodogram(frequencies,
         fig, axs = plt.subplots(dpi=dpi, figsize = figsize)
         axs.plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
         axs.set_title(f'Frequency: {frequencies[index_freq]} MHz')
+
         if target == 'Jupiter':
             axs.vlines([T_io*24],          (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
             axs.vlines([T_io*24/2],        (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
@@ -491,7 +501,7 @@ if __name__ == '__main__':
                     extra_name = '_masklevel'+str(int(args.rfi_mask_level))
             else:
                 extra_name = '_nomaskapplied'
-            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
+            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz'
 
 
             if args.save_as_hdf5:
@@ -540,8 +550,9 @@ if __name__ == '__main__':
                     extra_name = '_masklevel'+str(int(args.rfi_mask_level))
             else:
                 extra_name = '_nomaskapplied'
-            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{args.lombscargle_function}LS_{args.normalize_LS}'
+            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz'
 
+        extra_name = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
         if args.only_data_during_night:
             len_former_time = len(time)
             mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
