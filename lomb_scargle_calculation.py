@@ -293,7 +293,7 @@ def plot_LS_periodogram(frequencies,
     #else:
     for index_freq in range(len(frequencies)):
         if log != None:
-            log.info(f'Plotting frequencies {index_freq} / {len(frequencies)}')
+            log.info(f'Plotting frequency {index_freq+1} / {len(frequencies)}')
         #index_freq = 0
         if background:
             bck = numpy.nanmean(f_LS)
