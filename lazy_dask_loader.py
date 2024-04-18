@@ -890,6 +890,7 @@ class LazyFITSLoader:
                 data[data >= threshold] = 1
         
         data[numpy.isnan(data)] = 0
+        data[numpy.isinf(data)] = 0
 
         if log_infos:
             self.log.info("Starting Lomb Scargle periodogram computation")
