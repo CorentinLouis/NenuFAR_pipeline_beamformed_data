@@ -109,7 +109,7 @@ class LazyFITSLoader:
             self.exoplanet_period = exoplanet_period
             self.star_period = star_period
             if self.log != None:
-                self.log.info(f"Got it")
+                self.log.info(f"Got it in pre-defined informations")
         else:        
             if self.log != None:
                 self.log.info(f"Searching in csv file from Palantir")
@@ -130,7 +130,7 @@ class LazyFITSLoader:
             planet_info = get_planet_info_by_name(self.exoplanet_name, exoplanet_info_dict)
             if planet_info != None:
                 if self.log != None:
-                    self.log.info(f"Got it")
+                    self.log.info(f"Got it in csv file from Palantir")
                 self.exoplanet_period = planet_info['planet_orbital_period']
                 self.star_period = planet_info['star_rotperiod']
             else:
