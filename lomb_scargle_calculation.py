@@ -405,7 +405,7 @@ if __name__ == '__main__':
             else:
                 filename_list_type_target = f'{args.root}/list_type_target.txt'
                 list_type_target = read_csv_to_dict(filename_list_type_target)
-                target_type = get_planet_target_type('AD_LEO', list_type_target)
+                target_type = get_planet_target_type(args.target, list_type_target)
 
                 sub_path = f"*/*/*/{args.level_processing}/"
 
