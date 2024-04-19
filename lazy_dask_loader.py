@@ -884,11 +884,13 @@ class LazyFITSLoader:
         if self.stokes == 'V':
             data = numpy.abs(data)
         if self.stokes == 'VI':
-            data = numpy.abs(data)
             if threshold != None:
-                data[data < threshold] = 0
-                data[data >= threshold] = 1
-        
+                data[numpy.abs(data) > 1] = numpy.nan # unphysical points
+                data[numpy.abs(data) < threshold] = 0 # remove points <threshold
+                data[numpy.abs(data) >= threshold] = 1 # put every point > threshold at 1
+            
+            data = numpy.abs(data)
+
         data[numpy.isnan(data)] = 0
         data[numpy.isinf(data)] = 0
 
