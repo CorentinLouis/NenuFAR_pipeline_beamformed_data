@@ -323,6 +323,12 @@ def plot_LS_periodogram(frequencies,
         else:
             axs.vlines([T_star*24],     (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{\mathrm{"+f'{target}'+"}}$")
             axs.vlines([T_star*24/2],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{"+f'{target}'+"}}$")
+            if log:
+                log.info(f'{type(T_exoplanet)}')
+                log.info(f'{isinstance(T_exoplanet,numpy.ndarray)}')
+                log.info(f'{isinstance(T_exoplanet,numpy.float64)}')
+
+
             if isinstance(T_exoplanet,numpy.float64):
                 axs.vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{\mathrm{exoplanet}}$")
                 axs.vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{exoplanet}}$")
