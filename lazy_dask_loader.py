@@ -183,8 +183,12 @@ class LazyFITSLoader:
                 chunk_size_frequency = nf_
                 chunk_size_stokes = ns_
                 
-                datasize = 4 * nt_ * nf_ * ns_
+                if ns_ == 4:
+                    datasize = 4 * nt_ * nf_ * ns_
+                if ns_ == 3:
+                    datasize = 3 * nt_ * nf_ * ns_
                 datasizemax = 2**31 - 1
+                
                 
                 if self.stokes.lower() != 'rm':
                     if datasize <= datasizemax:
@@ -192,7 +196,7 @@ class LazyFITSLoader:
                         k = 0
                     else:
                         data_ = da.zeros((chunk_size_stokes, chunk_size_frequency, chunk_size_time))
-                        for k in range(4):
+                        for k in range(ns_):
                             data_[k, :, :] = da.from_array(hdus[3 + k].data, chunks=(chunk_size_frequency, chunk_size_time))
                         data_ = data_.T
                         
