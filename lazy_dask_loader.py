@@ -95,6 +95,10 @@ class LazyFITSLoader:
                             'star_period': numpy.nan,
                             'exoplanet_period': 2.2185733
                             },
+                            {'name': "GJ_1151",
+                            'star_period': 132,
+                            'exoplanet_period': 389.7
+                            },
                             {'name':'JUPITER',
                             'star_period':0.41351,
                             'exoplanet_period': 1.7708333333333333} # period of Io, that's what we're looking for (and not droids...)
