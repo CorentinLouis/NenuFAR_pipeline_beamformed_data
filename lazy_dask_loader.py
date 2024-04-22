@@ -172,65 +172,71 @@ class LazyFITSLoader:
             if log_infos:
                 self.log.info(f"Start loading data, file {count+1} / {len(self.data_fits_file_paths)}")
             with fits.open(fits_file_path, memmap=True) as hdus:
+                len_fits_file_ = len(hdus)
                 #command = hdus[0].data
                 #param = hdus[1].data
-                variable = hdus[2].data
-                nt_ = variable.NT[0]
-                nf_ = variable.NF[0]
-                ns_ = variable.NS[0]
+                if len_fits_file_ > 6:
+                    variable = hdus[2].data
+                    nt_ = variable.NT[0]
+                    nf_ = variable.NF[0]
+                    ns_ = variable.NS[0]
 
-                chunk_size_time = nt_
-                chunk_size_frequency = nf_
-                chunk_size_stokes = ns_
-                
-                if ns_ == 4:
-                    datasize = 4 * nt_ * nf_ * ns_
-                if ns_ == 3:
-                    datasize = 3 * nt_ * nf_ * ns_
-                datasizemax = 2**31 - 1
-                
-                
-                if self.stokes.lower() != 'rm':
-                    if datasize <= datasizemax:
-                        data_ = da.from_array(hdus[3].data.T, chunks=(chunk_size_time, chunk_size_frequency, chunk_size_stokes))
-                        k = 0
-                    else:
-                        data_ = da.zeros((chunk_size_stokes, chunk_size_frequency, chunk_size_time))
-                        for k in range(ns_):
-                            data_[k, :, :] = da.from_array(hdus[3 + k].data, chunks=(chunk_size_frequency, chunk_size_time))
-                        data_ = data_.T
-                        
-                else:
+                    chunk_size_time = nt_
+                    chunk_size_frequency = nf_
+                    chunk_size_stokes = ns_
+                    
+                    if ns_ == 4:
+                        datasize = 4 * nt_ * nf_ * ns_
+                    if ns_ == 3:
+                        datasize = 3 * nt_ * nf_ * ns_
+                    datasizemax = 2**31 - 1
+                    
+                    
+                    if self.stokes.lower() != 'rm':
                         if datasize <= datasizemax:
+                            data_ = da.from_array(hdus[3].data.T, chunks=(chunk_size_time, chunk_size_frequency, chunk_size_stokes))
                             k = 0
                         else:
-                            k = 3
-                        data_ = da.from_array(hdus[-2].data.T, chunks = (chunk_size_frequency, chunk_size_time))
-                        
-                rfilevel0_ = da.from_array(hdus[4 + k].data.T, chunks=(chunk_size_time, chunk_size_frequency))
-                time_ = da.from_array((Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5 + k].data, format='sec')).value, chunks = chunk_size_time)
+                            data_ = da.zeros((chunk_size_stokes, chunk_size_frequency, chunk_size_time))
+                            for k in range(ns_):
+                                data_[k, :, :] = da.from_array(hdus[3 + k].data, chunks=(chunk_size_frequency, chunk_size_time))
+                            data_ = data_.T
+                            
+                    else:
+                            if datasize <= datasizemax:
+                                k = 0
+                            else:
+                                k = 3
+                            data_ = da.from_array(hdus[-2].data.T, chunks = (chunk_size_frequency, chunk_size_time))
+                            
+                    rfilevel0_ = da.from_array(hdus[4 + k].data.T, chunks=(chunk_size_time, chunk_size_frequency))
+                    time_ = da.from_array((Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5 + k].data, format='sec')).value, chunks = chunk_size_time)
 
 
-                #frequency_ = hdus[6 + k].data * u.MHz
-                if self.stokes.lower() != 'rm':
-                    frequency_ = da.from_array((hdus[6 + k].data * u.MHz).value, chunks=chunk_size_frequency)
-                else:
-                    frequency_ = da.from_array(hdus[-1].data, chunks=chunk_size_frequency)
+                    #frequency_ = hdus[6 + k].data * u.MHz
+                    if self.stokes.lower() != 'rm':
+                        frequency_ = da.from_array((hdus[6 + k].data * u.MHz).value, chunks=chunk_size_frequency)
+                    else:
+                        frequency_ = da.from_array(hdus[-1].data, chunks=chunk_size_frequency)
 
-                if self.interpolation_in_time:
-                    #new_interval = (time_[1]-time_[0])*self.interpolation_in_time_factor
-                    time_interp_ = da.arange(time_[0], time_[-1], self.interpolation_in_time_value)
-                else:
-                    time_interp_ = []
+                    if self.interpolation_in_time:
+                        #new_interval = (time_[1]-time_[0])*self.interpolation_in_time_factor
+                        time_interp_ = da.arange(time_[0], time_[-1], self.interpolation_in_time_value)
+                    else:
+                        time_interp_ = []
 
-            # Appending 
-            time.append(time_)
-            time_interp.append(time_interp_)
-            frequency.append(frequency_)
-            data.append(data_)
-            if (self.apply_rfi_mask == True) and (self.rfi_mask_level == 0):
-                    rfi_mask0.append(rfilevel0_)
-
+            if len_fits_file_ > 6:
+                # Appending 
+                time.append(time_)
+                time_interp.append(time_interp_)
+                frequency.append(frequency_)
+                data.append(data_)
+                if (self.apply_rfi_mask == True) and (self.rfi_mask_level == 0):
+                        rfi_mask0.append(rfilevel0_)
+            else:
+                if log_infos:
+                    self.log.info(f"File {count+1} / {len(self.data_fits_file_paths)}: {fits_file_path} seems to have a length issue. Skipping...")
+            
             if log_infos:
                 self.log.info(f"End loading data, file {count+1} / {len(self.data_fits_file_paths)}")
 
