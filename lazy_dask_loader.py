@@ -87,14 +87,19 @@ class LazyFITSLoader:
                             'exoplanet_period': [0.5825434179024767, 0.13319386531196653, 0.04794132111425209]
                             },
                             {
-                            'name': 'TAU_BOOTIS',
+                            'name': 'TAU_BOO',
                             'star_period': 16.787098628096576,
                             'exoplanet_period': 0.14700659746948372
+                            },
+                            {'name': "HD_189733",
+                            'star_period': numpy.nan,
+                            'exoplanet_period': 2.2185733
                             },
                             {'name':'JUPITER',
                             'star_period':0.41351,
                             'exoplanet_period': 1.7708333333333333} # period of Io, that's what we're looking for (and not droids...)
                             ]
+
         def get_exoplanet_info(exoplanet_name, exoplanet_infos):
             for info in exoplanet_infos:
                 if info['name'].upper() == exoplanet_name:
