@@ -347,6 +347,7 @@ def plot_LS_periodogram(frequencies,
                         axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{synodic exoplanet "+f'{index}'+"}}$")
         #axs.xaxis.set_minor_locator(MultipleLocator(1))
         #axs.xaxis.set_major_locator(MultipleLocator(5))
+
         axs.legend()
         if x_limits == None:
             #axs.set_xlim([(numpy.mean(T_exoplanet)/10)*24,(numpy.mean(T_exoplanet)*2)*24])
@@ -389,6 +390,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_as_hdf5', dest = 'save_as_hdf5', default = False, action = 'store_true', help = "To save results in an hdf5 file")
     parser.add_argument('--plot_results', dest = 'plot_results', default = False, action = 'store_true', help = "To plot and save results")
     parser.add_argument("--figsize", dest = 'figsize', nargs = 2, type = int, default = None, help = "Figure size")
+    parser.add_arugment('--plot_x_lim', dest = 'plot_x_lim', default = None, nargs = 2, type = float, help = "x limits for Lomb-Scargle periodogram plot")
 
     parser.add_argument('--plot_only', dest = 'plot_only', default = False, action = 'store_true', help = "Set this as True if you only want to plot the results from pre-calculated data stored in an hdf5 file")
     parser.add_argument('--reprocess_LS_periodogram', dest = 'reprocess_LS_periodogram', default = False, action = 'store_true', help = "Set this as True if you want to read from an hdf5 file data already rebinned, and re-process the Lomb Scargle calculation")
@@ -662,6 +664,7 @@ if __name__ == '__main__':
                                 key_project = args.key_project,
                                 figsize = args.figsize,
                                 extra_name = extra_name,
+                                x_limits = args.plot_x_lim, 
                                 log = log)
 
        
@@ -687,5 +690,6 @@ if __name__ == '__main__':
                             target = target,
                             key_project = key_project,
                             figsize = args.figsize,
+                            x_limits = args.plot_x_lim, 
                             filename = args.input_hdf5_file.split('.')[0].split('/')[-1],
                             log = log)
