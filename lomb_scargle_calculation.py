@@ -375,7 +375,7 @@ if __name__ == '__main__':
     parser.add_argument('--apply_rfi_mask', dest = 'apply_rfi_mask', default = False, action = 'store_true', help = "Apply RFI mask")
     parser.add_argument('--rfi_mask_level', dest = 'rfi_mask_level', default = None, type = int, help = "Level of the RFI mask to apply (needed if --apply_rfi_mask True). Option are 0, 1, 2, or 3")
     parser.add_argument('--rfi_mask_level0_percentage', dest = 'rfi_mask_level0_percentage', default = 10, type = float, help = "Percentage (i.e. threshold) of the RFI mask level to apply (needed if --apply_rfi_mask True and rfi_mask_level is 0). Values can be between 0 and 100 %")
-    parser.add_argument('--remove_off_beam', dest = 'remove_off_beam', default = False, action = 'store_true', help = "Set as True to remove off beam(s) observation to on beam(s)")
+    parser.add_argument('--off_beas', dest = 'off_beams', default = False, action = 'store_true', help = "Set as True to do the analysis on the off beam(s) observation")
     parser.add_argument('--interpolation_in_time', dest = 'interpolation_in_time', default = False, action = 'store_true', help = "Interpolate in time")
     parser.add_argument('--interpolation_in_time_value', dest = 'interpolation_in_time_value', default = 1, type = float, help = "Value in second over which data need to be interpolated")
     parser.add_argument('--interpolation_in_frequency', dest = 'interpolation_in_frequency', default = False, action = 'store_true', help = "Interpolate in time")
@@ -384,6 +384,9 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', dest = 'verbose', default = False, action = 'store_true', help = "To print on screen the log infos")
     parser.add_argument('--log_infos', dest = 'log_infos', default = False, action = 'store_true', help = "To print on screen the dask computing info, and control graphics after computation")
     
+    parser.add_argument('--lombscargle_calculation', dest = 'lombscargle_calculation', default = True, action = 'store_true', help = "Set this as False if you don't want to calculate the lomb scargle periodogram. Only processed data will be saved.")
+    parser.add_argument('--periodicity_stacking_calculation', dest = 'periodicity_stacking_calculation', default = False, action = 'store_true', help = "Set this as True if you want to calculate the stacked (per exoplanet(s) revolution and star rotation periods) timeseries.")
+
     parser.add_argument('--lombscargle_function', dest = 'lombscargle_function', type = str, default = 'scipy', help = "LombScargle package to be used. Options are 'scipy' or 'astropy'")
     parser.add_argument('--normalize_LS', dest = 'normalize_LS', default = False, action = 'store_true', help = "Normalization of the Lomb-Scargle periodogram")
     parser.add_argument('--remove_background_to_LS', dest = 'background', default = False, action='store_true', help="Set True to remove a background to the Lomb Scargle plots (per LS frequency)")
@@ -395,7 +398,7 @@ if __name__ == '__main__':
     parser.add_argument('--plot_only', dest = 'plot_only', default = False, action = 'store_true', help = "Set this as True if you only want to plot the results from pre-calculated data stored in an hdf5 file")
     parser.add_argument('--reprocess_LS_periodogram', dest = 'reprocess_LS_periodogram', default = False, action = 'store_true', help = "Set this as True if you want to read from an hdf5 file data already rebinned, and re-process the Lomb Scargle calculation")
     parser.add_argument('--input_hdf5_file', dest = 'input_hdf5_file', default = None, type = str, help = "HDF5 file path containing pre-calculated data. Required if --plot_only or --reprocess_LS_periodogram is set as True")
-    
+    parser.add_argument('--beam_number', dest = 'beam_number', default = None, type = int, help = "Beam number to be reprocessed in case --reprocess_LS_periodogram is set as True")
     parser.add_argument('--output_directory', dest = 'output_directory', default = './', type = str, help = "Output directory where to save hdf5 and/or plots")
     parser.add_argument('--only_data_during_night', dest = 'only_data_during_night', default = False, action = 'store_true', help = "To select only data during night time")
     args = parser.parse_args()
@@ -428,113 +431,146 @@ if __name__ == '__main__':
                         log.info(f"It seems that the target you are looking for isn't in the '{filename_list_type_target}' file you provide. Please check Target name and/or add the target type ('star' or 'exoplanet') info to the file.")
                     raise RuntimeError(f"It seems that the target you are looking for isn't in the '{filename_list_type_target}' file you provide. Please check Target name and/or add the target type ('star' or 'exoplanet') info to the file.")
 
-            if args.apply_rfi_mask and args.rfi_mask_level > 0:
-                rfi_fits_file_paths_beam_on = [
-                        filename
-                        for beam_number in beam_on
-                            for filename in glob.iglob(
-                                f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.rfi*.fits',
-                            recursive=True
-                        )
-                    ] 
-                
-                data_fits_file_paths_beam_on = [
-                        ifile.split('rfimask')[0]+'spectra'+ifile.split('rfimask')[-1]
-                        for ifile in rfi_fits_file_paths_beam_on
-                    ] 
-            else:       
-                data_fits_file_paths_beam_on = [
-                        filename
-                        for beam_number in beam_on
-                            for filename in glob.iglob(
-                                f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.spectra*.fits',
-                                recursive=True
-                        )
-                    ]
-
-                rfi_fits_file_paths_beam_on = []
+            if args.off_beams:
+                beam_list = beam_off
+            else:
+                beam_list = beam_on
             
-            if args.log_infos:
-                log.info(f"{len(data_fits_file_paths_beam_on)} ON beam files will be read (x2 if users asked for RFI mask > 0 to be removed)")
-
-            if args.remove_off_beam:
-                data_fits_file_paths_beam_off = [
+            if (target_type == 'star') or ((target_type == 'exoplanet') and (args.beam_off == False)) :
+                if args.apply_rfi_mask and args.rfi_mask_level > 0:
+                    rfi_fits_file_paths = [[
                             filename
-                            for beam_number in beam_off
-                                for filename in glob.iglob(
-                                    f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.spectra*.fits',
-                                    recursive=True
-                            )
-                        ]
-
-                if args.log_infos:
-                    log.info(f"{len(data_fits_file_paths_beam_on)} OFF beam files will be read (x2 if readers asked for rfi to be removed)")
-
-
-                rfi_fits_file_paths_beam_off = [
-                            filename
-                            for beam_number in beam_off
+                            for beam_number in beam_list
                                 for filename in glob.iglob(
                                     f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.rfi*.fits',
                                 recursive=True
                             )
-                        ] 
+                        ]]
+                    
+                    data_fits_file_paths = [
+                                            [
+                                                ifile.split('rfimask')[0] + 'spectra' + ifile.split('rfimask')[-1]
+                                                for ifile in beam_files
+                                            ]
+                                            for beam_files in rfi_fits_file_paths
+                                            ]
+                else:       
+                    data_fits_file_paths = [[
+                            filename
+                            for beam_number in beam_list
+                                for filename in glob.iglob(
+                                    f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.spectra*.fits',
+                                    recursive=True
+                            )
+                        ]]
 
-            
-            
-            lazy_loader = LazyFITSLoader(data_fits_file_paths_beam_on, rfi_fits_file_paths_beam_on,
-                                        args.stokes,
-                                        args.target,
-                                        args.key_project,
-                                        log
-                                    )
-            time, frequencies, data_final = lazy_loader.get_dask_array(
-                frequency_interval = args.frequency_interval,
-                stokes = args.stokes,
-                apply_rfi_mask = args.apply_rfi_mask,
-                rfi_mask_level = args.rfi_mask_level,
-                rfi_mask_level0_percentage = args.rfi_mask_level0_percentage,
-                interpolation_in_time = args.interpolation_in_time,
-                interpolation_in_time_value = args.interpolation_in_time_value,
-                interpolation_in_frequency = args.interpolation_in_frequency,
-                interpolation_in_frequency_value = args.interpolation_in_frequency_value,
-                verbose = args.verbose,
-                log_infos = args.log_infos,
-                output_directory = args.output_directory
-            )
+                    rfi_fits_file_paths = [[]]
+            else:  #if ((target_type == 'exoplanet') and (args.beam_off == True)) 
+                if args.apply_rfi_mask and args.rfi_mask_level > 0:
+                    rfi_fits_file_paths = {
+                                            beam_number: [
+                                                        filename
+                                                        for filename in glob.iglob(
+                                                            f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.rfi*.fits',
+                                                            recursive=True
+                                                            )
+                                                        ]
+                                            for beam_number in beam_off
+                                        }
+                    rfi_fits_file_paths = [rfi_fits_file_paths[beam_number] for beam_number in beam_off]
+                    
+                    data_fits_file_paths = [
+                                            [
+                                                ifile.split('rfimask')[0] + 'spectra' + ifile.split('rfimask')[-1]
+                                                for ifile in beam_files
+                                            ]
+                                            for beam_files in rfi_fits_file_paths_list
+                                            ]
 
-            lazy_loader.find_rotation_period_exoplanet()
-            T_exoplanet = lazy_loader.exoplanet_period # in days
-            T_star = lazy_loader.star_period
+                else:       
+                    data_fits_file_paths = {
+                                            beam_number: [
+                                                        filename
+                                                        for filename in glob.iglob(
+                                                            f'{args.root}/*{args.key_project}/{sub_path}*{args.target.upper()}*_{beam_number}.spectra*.fits',
+                                                            recursive=True
+                                                            )
+                                                        ]
+                                            for beam_number in beam_off
+                                        }
+                    data_fits_file_paths = [data_fits_file_paths[beam_number] for beam_number in beam_off]
+                    rfi_fits_file_paths = [[], [], []]
+            for i_beam in range(len(data_fits_file_paths)):
+                if args.log_infos:
+                    if args.off_beams:
+                        log.info(f"{len(data_fits_file_paths[i_beam])} OFF beam files will be read (x2 if users asked for RFI mask > 0 to be removed)")
+                    else:
+                        log.info(f"{len(data_fits_file_paths[i_beam])} ON beam files will be read (x2 if users asked for RFI mask > 0 to be removed)")
+                    
+                
+                lazy_loader = LazyFITSLoader(data_fits_file_paths[i_beam], rfi_fits_file_paths[i_beam],
+                                            args.stokes,
+                                            args.target,
+                                            args.key_project,
+                                            log
+                                        )
+                time, frequencies, data_final = lazy_loader.get_dask_array(
+                    frequency_interval = args.frequency_interval,
+                    stokes = args.stokes,
+                    apply_rfi_mask = args.apply_rfi_mask,
+                    rfi_mask_level = args.rfi_mask_level,
+                    rfi_mask_level0_percentage = args.rfi_mask_level0_percentage,
+                    interpolation_in_time = args.interpolation_in_time,
+                    interpolation_in_time_value = args.interpolation_in_time_value,
+                    interpolation_in_frequency = args.interpolation_in_frequency,
+                    interpolation_in_frequency_value = args.interpolation_in_frequency_value,
+                    verbose = args.verbose,
+                    log_infos = args.log_infos,
+                    output_directory = args.output_directory
+                )
 
-            extra_name = ''
-            if args.apply_rfi_mask != False:
-                if args.rfi_mask_level == 0:
-                    extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
+                lazy_loader.find_rotation_period_exoplanet()
+                T_exoplanet = lazy_loader.exoplanet_period # in days
+                T_star = lazy_loader.star_period
+
+                extra_name = ''
+                if args.beam_off:
+                    beam_type = 'OFF'
                 else:
-                    extra_name = '_masklevel'+str(int(args.rfi_mask_level))
-            else:
-                extra_name = '_nomaskapplied'
-            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz'
+                    beam_type = 'ON'
+                if (target_type == 'star') or ((target_type == 'exoplanet') and (args.beam_off == False)):
+                    beam_number = ''
+                else:
+                    beam_number = f'{beam_list[i_beam]}'
+                
+                if args.apply_rfi_mask != False:
+                    if args.rfi_mask_level == 0:
+                        extra_name = '_masklevel'+str(int(args.rfi_mask_level))+'_'+str(int(args.rfi_mask_level0_percentage))+'percents'
+                    else:
+                        extra_name = '_masklevel'+str(int(args.rfi_mask_level))
+                else:
+                    extra_name = '_nomaskapplied'
+                extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{beam_type}{beam_number}'
 
 
-            if args.save_as_hdf5:
-                save_preliminary_data_to_hdf5(time,
-                                    frequencies,
-                                    data_final,
-                                    args.stokes,
-                                    args.output_directory,
-                                    args.key_project,
-                                    args.target,
-                                    T_exoplanet,
-                                    T_star,
-                                    extra_name = extra_name)
+                if args.save_as_hdf5:
+                    save_preliminary_data_to_hdf5(time,
+                                        frequencies,
+                                        data_final,
+                                        args.stokes,
+                                        args.output_directory,
+                                        args.key_project,
+                                        args.target,
+                                        T_exoplanet,
+                                        T_star,
+                                        extra_name = extra_name)
         
         elif args.reprocess_LS_periodogram == True:
         
             if args.input_hdf5_file == None:
-                raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --plot_only is set as True")
-        
+                raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --reprocess_LS_periodogram is set as True")
+            if args.beam_number == None:
+                raise RuntimeError("An beam number needs to be given with the --beam_number argument if --reprocess_LS_periodogram is set as True")
             (time_datetime,
                 frequencies,
                 data_final,
@@ -564,7 +600,7 @@ if __name__ == '__main__':
                     extra_name = '_masklevel'+str(int(args.rfi_mask_level))
             else:
                 extra_name = '_nomaskapplied'
-            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz'
+            extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{beam_type}{args.beam_number}'
 
         extra_name = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
         if args.only_data_during_night:
