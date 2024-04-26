@@ -573,6 +573,7 @@ if __name__ == '__main__':
 
                 if args.lombscargle_calculation:
                     extra_name_LS = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
+
                     if args.only_data_during_night:
                         len_former_time = len(time)
                         mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
@@ -617,7 +618,6 @@ if __name__ == '__main__':
 
 
                     if args.plot_results:
-                        extra_name_LS = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
                         plot_LS_periodogram(frequencies,
                                             f_LS,
                                             power_LS,
