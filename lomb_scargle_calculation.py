@@ -616,22 +616,22 @@ if __name__ == '__main__':
                                 extra_name = extra_name_LS)
 
 
-                        if args.plot_results:
-                            extra_name_LS = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
-                            plot_LS_periodogram(frequencies,
-                                                f_LS,
-                                                power_LS,
-                                                args.stokes,
-                                                args.output_directory,
-                                                background = args.background,
-                                                T_exoplanet = T_exoplanet,
-                                                T_star = T_star,
-                                                target = args.target,
-                                                key_project = args.key_project,
-                                                figsize = args.figsize,
-                                                extra_name = extra_name_LS,
-                                                x_limits = args.plot_x_lim, 
-                                                log = log)
+                    if args.plot_results:
+                        extra_name_LS = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
+                        plot_LS_periodogram(frequencies,
+                                            f_LS,
+                                            power_LS,
+                                            args.stokes,
+                                            args.output_directory,
+                                            background = args.background,
+                                            T_exoplanet = T_exoplanet,
+                                            T_star = T_star,
+                                            target = args.target,
+                                            key_project = args.key_project,
+                                            figsize = args.figsize,
+                                            extra_name = extra_name_LS,
+                                            x_limits = args.plot_x_lim, 
+                                            log = log)
                 
                 if args.periodicity_stacking_calculation:
                     extra_name_PS = extra_name+f'_stacking_by_revolution_period'
