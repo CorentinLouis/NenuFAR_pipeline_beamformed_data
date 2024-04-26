@@ -503,7 +503,7 @@ if __name__ == '__main__':
             for i_beam in range(len(data_fits_file_paths)):
                 if args.log_infos:
                     if args.off_beams:
-                        log.infos(f"Starting reading files for OFF beam number {beam_list[i_beam]}")
+                        log.info(f"Starting reading files for OFF beam number {beam_list[i_beam]}")
                         log.info(f"{len(data_fits_file_paths[i_beam])} OFF beam files will be read (x2 if users asked for RFI mask > 0 to be removed)")
                     else:
                         log.info(f"{len(data_fits_file_paths[i_beam])} ON beam files will be read (x2 if users asked for RFI mask > 0 to be removed)")
