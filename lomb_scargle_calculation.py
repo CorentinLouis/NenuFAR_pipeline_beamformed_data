@@ -403,6 +403,10 @@ if __name__ == '__main__':
     parser.add_argument('--only_data_during_night', dest = 'only_data_during_night', default = False, action = 'store_true', help = "To select only data during night time")
     args = parser.parse_args()
     
+
+    if args.periodicity_stacking_calculation:
+        args.lombscargle_calculation = False
+
     if (args.plot_only == False):
         if args.log_infos:
             log = configure_logging(args)
@@ -568,7 +572,7 @@ if __name__ == '__main__':
 
 
                 if args.lombscargle_calculation:
-                    extra_name = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
+                    extra_name_LS = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
                     if args.only_data_during_night:
                         len_former_time = len(time)
                         mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
@@ -609,10 +613,68 @@ if __name__ == '__main__':
                                 args.target,
                                 T_exoplanet,
                                 T_star,
-                                extra_name = extra_name)
-        
+                                extra_name = extra_name_LS)
+
+
+                        if args.plot_results:
+                            extra_name_LS = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
+                            plot_LS_periodogram(frequencies,
+                                                f_LS,
+                                                power_LS,
+                                                args.stokes,
+                                                args.output_directory,
+                                                background = args.background,
+                                                T_exoplanet = T_exoplanet,
+                                                T_star = T_star,
+                                                target = args.target,
+                                                key_project = args.key_project,
+                                                figsize = args.figsize,
+                                                extra_name = extra_name_LS,
+                                                x_limits = args.plot_x_lim, 
+                                                log = log)
+                
+                if args.periodicity_stacking_calculation:
+                    extra_name_PS = extra_name+f'_stacking_by_revolution_period'
+                    # need to take the exoplanet revolution period
+                    T_exoplanet = lazy_loader.exoplanet_period*24 # in hours
+                    # At some point it'll be needed to differentiate cases where T_exoplanet is a numpy.ndarray, or a numpy.float
+                    # then stack data_final by this period, using time
+                    time_hours = time_unix / 3600
+                    # Calculate the phase of the exoplanet
+                    phase = time_hours % T_exoplanet
+
+                    # Sort the data based on the phase
+                    sorted_indices = np.argsort(phase)
+                    sorted_phase = phase[sorted_indices]
+                    sorted_data = data[sorted_indices]
+                    # Stack the data based on the phase of the exoplanet
+                    #stacked_data = []
+                    #unique_phases = np.unique(sorted_phase)
+                    #for phase_value in unique_phases:
+                    #    phase_data = sorted_data[sorted_phase == phase_value]
+                    #    stacked_data.append(phase_data)
+                    
+
+                    # Calculate the phase bins
+                    phase_bins = np.linspace(0, T_exoplanet, num=T_exoplanet*24)  # Adjust the number of bins as needed
+
+
+                    # Compute the sum of intensity encountered at each phase
+                    stack_data = np.zeros_like(phase_bins)
+
+                    # Iterate over each phase bin and accumulate the intensity
+                    for i in range(len(phase_bins) - 1):
+                        mask = (phase >= phase_bins[i]) & (phase < phase_bins[i + 1])
+                        stack_data[i] = np.sum(data[mask])
+
+                    if args.periodicity_stacking_calculation:
+                        extra_name_PS = extra_name+f'_stacking_by_revolution_period'
+            
+
+
+
+
         elif args.reprocess_LS_periodogram == True:
-        
             if args.input_hdf5_file == None:
                 raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --reprocess_LS_periodogram is set as True")
             if args.beam_number == None:
@@ -692,58 +754,25 @@ if __name__ == '__main__':
                             T_star,
                             extra_name = extra_name)
 
-        if args.plot_results:
-            plot_LS_periodogram(frequencies,
-                                f_LS,
-                                power_LS,
-                                args.stokes,
-                                args.output_directory,
-                                background = args.background,
-                                T_exoplanet = T_exoplanet,
-                                T_star = T_star,
-                                target = args.target,
-                                key_project = args.key_project,
-                                figsize = args.figsize,
-                                extra_name = extra_name,
-                                x_limits = args.plot_x_lim, 
-                                log = log)
+                if args.plot_results:
+                    extra_name_LS = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
+                    plot_LS_periodogram(frequencies,
+                                    f_LS,
+                                    power_LS,
+                                    args.stokes,
+                                    args.output_directory,
+                                    background = args.background,
+                                    T_exoplanet = T_exoplanet,
+                                    T_star = T_star,
+                                    target = args.target,
+                                    key_project = args.key_project,
+                                    figsize = args.figsize,
+                                    extra_name = extra_name,
+                                    x_limits = args.plot_x_lim, 
+                                    log = log)
 
-    if args.periodicity_stacking_calculation:
-        extra_name = extra_name+f'_stacking_by_revolution_period'
-        # need to take the exoplanet revolution period
-        T_exoplanet = lazy_loader.exoplanet_period*24 # in hours
-        # At some point it'll be needed to differentiate cases where T_exoplanet is a numpy.ndarray, or a numpy.float
-        # then stack data_final by this period, using time
-        time_hours = time_unix / 3600
-        # Calculate the phase of the exoplanet
-        phase = time_hours % T_exoplanet
-
-        # Sort the data based on the phase
-        sorted_indices = np.argsort(phase)
-        sorted_phase = phase[sorted_indices]
-        sorted_data = data[sorted_indices]
-        # Stack the data based on the phase of the exoplanet
-        #stacked_data = []
-        #unique_phases = np.unique(sorted_phase)
-        #for phase_value in unique_phases:
-        #    phase_data = sorted_data[sorted_phase == phase_value]
-        #    stacked_data.append(phase_data)
-        
-
-        # Calculate the phase bins
-        phase_bins = np.linspace(0, T_exoplanet, num=T_exoplanet*24)  # Adjust the number of bins as needed
-
-
-        # Compute the sum of intensity encountered at each phase
-        stack_data = np.zeros_like(phase_bins)
-
-        # Iterate over each phase bin and accumulate the intensity
-        for i in range(len(phase_bins) - 1):
-            mask = (phase >= phase_bins[i]) & (phase < phase_bins[i + 1])
-            stack_data[i] = np.sum(data[mask])
-
-
-
+   
+    
 
     if args.plot_only:
         if args.input_hdf5_file == None:
