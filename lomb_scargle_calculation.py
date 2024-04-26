@@ -475,9 +475,9 @@ if __name__ == '__main__':
                                                             recursive=True
                                                             )
                                                         ]
-                                            for beam_number in beam_off
+                                            for beam_number in beam_list
                                         }
-                    rfi_fits_file_paths = [rfi_fits_file_paths[beam_number] for beam_number in beam_off]
+                    rfi_fits_file_paths = [rfi_fits_file_paths[beam_number] for beam_number in beam_list]
                     
                     data_fits_file_paths = [
                                             [
@@ -496,13 +496,14 @@ if __name__ == '__main__':
                                                             recursive=True
                                                             )
                                                         ]
-                                            for beam_number in beam_off
+                                            for beam_number in beam_list
                                         }
-                    data_fits_file_paths = [data_fits_file_paths[beam_number] for beam_number in beam_off]
+                    data_fits_file_paths = [data_fits_file_paths[beam_number] for beam_number in beam_list]
                     rfi_fits_file_paths = [[], [], []]
             for i_beam in range(len(data_fits_file_paths)):
                 if args.log_infos:
                     if args.off_beams:
+                        log.infos(f"Starting reading files for OFF beam number {beam_list[i_beam]}")
                         log.info(f"{len(data_fits_file_paths[i_beam])} OFF beam files will be read (x2 if users asked for RFI mask > 0 to be removed)")
                     else:
                         log.info(f"{len(data_fits_file_paths[i_beam])} ON beam files will be read (x2 if users asked for RFI mask > 0 to be removed)")
