@@ -602,90 +602,91 @@ if __name__ == '__main__':
                 extra_name = '_nomaskapplied'
             extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{beam_type}{args.beam_number}'
 
-        extra_name = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
-        if args.only_data_during_night:
-            len_former_time = len(time)
-            mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
-            mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
-            time = time[mask == 0]
-            data_final = data_final[mask == 0,:]
-            if args.log_infos:
-                log.info(f"{len(time)} / {len_former_time} are selected for this time observation window")
+        if args.lombscargle_calculation:
+            extra_name = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
+            if args.only_data_during_night:
+                len_former_time = len(time)
+                mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
+                mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
+                time = time[mask == 0]
+                data_final = data_final[mask == 0,:]
+                if args.log_infos:
+                    log.info(f"{len(time)} / {len_former_time} are selected for this time observation window")
 
-        args_list = [(
-                    lazy_loader,
-                    time,
-                    20 * numpy.log10(data_final[:, index_freq]) if args.stokes.upper() in ('I', 'RM') else data_final[:, index_freq],
-                    args.threshold,
-                    args.normalize_LS,
-                    args.lombscargle_function,
-                    args.log_infos)
-                    for index_freq in range(len(frequencies))
-                    ]
+            args_list = [(
+                        lazy_loader,
+                        time,
+                        20 * numpy.log10(data_final[:, index_freq]) if args.stokes.upper() in ('I', 'RM') else data_final[:, index_freq],
+                        args.threshold,
+                        args.normalize_LS,
+                        args.lombscargle_function,
+                        args.log_infos)
+                        for index_freq in range(len(frequencies))
+                        ]
 
 
-        with multiprocessing.Pool() as pool:
-            results = pool.map(calculate_LS, args_list)
+            with multiprocessing.Pool() as pool:
+                results = pool.map(calculate_LS, args_list)
 
-        #if args.verbose:
-        #    with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
-        #        with ProgressBar():
-        #            time = time.compute()
-        #        with ProgressBar():
-        #            frequencies = frequencies.compute()
-        #        with ProgressBar():
-        #            data_final = data_final.compute()
-        #        with ProgressBar():
-        #            f_LS = [result[0].compute() for result in results]
-        #        with ProgressBar():
-        #            power_LS = [result[1].compute() for result in results]
-        #    visualize([prof, rprof, cprof,])
+            #if args.verbose:
+            #    with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
+            #        with ProgressBar():
+            #            time = time.compute()
+            #        with ProgressBar():
+            #            frequencies = frequencies.compute()
+            #        with ProgressBar():
+            #            data_final = data_final.compute()
+            #        with ProgressBar():
+            #            f_LS = [result[0].compute() for result in results]
+            #        with ProgressBar():
+            #            power_LS = [result[1].compute() for result in results]
+            #    visualize([prof, rprof, cprof,])
 
-        #else:
-        #    time = time.compute()
-        #    frequencies = frequencies.compute()
-        #    data_final = data_final.compute()
-        #    f_LS = [result[0].compute() for result in results]
-        #    power_LS = [result[1].compute() for result in results]
+            #else:
+            #    time = time.compute()
+            #    frequencies = frequencies.compute()
+            #    data_final = data_final.compute()
+            #    f_LS = [result[0].compute() for result in results]
+            #    power_LS = [result[1].compute() for result in results]
 
-        f_LS = [result[0] for result in results]
-        power_LS = [result[1] for result in results]
+            f_LS = [result[0] for result in results]
+            power_LS = [result[1] for result in results]
+                
+        
+            # Concatenating of arrays over observation
+            #time = numpy.concatenate(time_, axis=0)
+            #if numpy.max(frequencies_[-1]) - numpy.max(frequencies_[0]) > 1e-8:
+            #    raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
+            #else:
+            #    frequencies = frequencies_[0]
             
-       
-         # Concatenating of arrays over observation
-        #time = numpy.concatenate(time_, axis=0)
-        #if numpy.max(frequencies_[-1]) - numpy.max(frequencies_[0]) > 1e-8:
-        #    raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
-        #else:
-        #    frequencies = frequencies_[0]
-        
-        #data_final = numpy.concatenate(data_final_, axis=0)
-        #f_LS = numpy.concatenate(f_LS_, axis=0)
-        #power_LS = numpy.concatenate(power_LS_, axis=0)
+            #data_final = numpy.concatenate(data_final_, axis=0)
+            #f_LS = numpy.concatenate(f_LS_, axis=0)
+            #power_LS = numpy.concatenate(power_LS_, axis=0)
 
 
 
 
-        #print(f'time: {time.shape}')
-        #print(f'frequencies: {frequencies.shape}')
-        #print(f'data_final: {data_final.shape}')
-        #print(f'f_LS: {f_LS.shape}')
-        #print(f'power_LS: {power_LS.shape}')
+            #print(f'time: {time.shape}')
+            #print(f'frequencies: {frequencies.shape}')
+            #print(f'data_final: {data_final.shape}')
+            #print(f'f_LS: {f_LS.shape}')
+            #print(f'power_LS: {power_LS.shape}')
 
-        
-        if args.save_as_hdf5:
-            save_to_hdf(time,
-                    frequencies,
-                    data_final,
-                    f_LS,
-                    power_LS,
-                    args.stokes,
-                    args.output_directory,
-                    args.key_project,
-                    args.target,
-                    T_exoplanet,
-                    T_star,
-                    extra_name = extra_name)
+            
+            if args.save_as_hdf5:
+                save_to_hdf(time,
+                        frequencies,
+                        data_final,
+                        f_LS,
+                        power_LS,
+                        args.stokes,
+                        args.output_directory,
+                        args.key_project,
+                        args.target,
+                        T_exoplanet,
+                        T_star,
+                        extra_name = extra_name)
 
         if args.plot_results:
             plot_LS_periodogram(frequencies,
@@ -703,7 +704,43 @@ if __name__ == '__main__':
                                 x_limits = args.plot_x_lim, 
                                 log = log)
 
-       
+    if args.periodicity_stacking_calculation:
+        extra_name = extra_name+f'_stacking_by_revolution_period'
+        # need to take the exoplanet revolution period
+        T_exoplanet = lazy_loader.exoplanet_period*24 # in hours
+        # At some point it'll be needed to differentiate cases where T_exoplanet is a numpy.ndarray, or a numpy.float
+        # then stack data_final by this period, using time
+        time_hours = time_unix / 3600
+        # Calculate the phase of the exoplanet
+        phase = time_hours % T_exoplanet
+
+        # Sort the data based on the phase
+        sorted_indices = np.argsort(phase)
+        sorted_phase = phase[sorted_indices]
+        sorted_data = data[sorted_indices]
+        # Stack the data based on the phase of the exoplanet
+        #stacked_data = []
+        #unique_phases = np.unique(sorted_phase)
+        #for phase_value in unique_phases:
+        #    phase_data = sorted_data[sorted_phase == phase_value]
+        #    stacked_data.append(phase_data)
+        
+
+        # Calculate the phase bins
+        phase_bins = np.linspace(0, T_exoplanet, num=T_exoplanet*24)  # Adjust the number of bins as needed
+
+
+        # Compute the sum of intensity encountered at each phase
+        stack_data = np.zeros_like(phase_bins)
+
+        # Iterate over each phase bin and accumulate the intensity
+        for i in range(len(phase_bins) - 1):
+            mask = (phase >= phase_bins[i]) & (phase < phase_bins[i + 1])
+            stack_data[i] = np.sum(data[mask])
+
+
+
+
     if args.plot_only:
         if args.input_hdf5_file == None:
             raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --plot_only is set as True")
@@ -713,9 +750,9 @@ if __name__ == '__main__':
             log = configure_logging(args)
         else:
             log = None
-
-        (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet, T_star) = read_hdf5_file(args.input_hdf5_file, dataset = False, LS_dataset = True)
-        plot_LS_periodogram(frequency_obs,
+        if args.lombscargle_calculation:
+            (time_datetime, frequency_obs, frequency_LS, power_LS, stokes, key_project, target, T_exoplanet, T_star) = read_hdf5_file(args.input_hdf5_file, dataset = False, LS_dataset = True)
+            plot_LS_periodogram(frequency_obs,
                             frequency_LS,
                             power_LS,
                             stokes,
