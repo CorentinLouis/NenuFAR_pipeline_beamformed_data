@@ -565,6 +565,51 @@ if __name__ == '__main__':
                                         T_exoplanet,
                                         T_star,
                                         extra_name = extra_name)
+
+
+                if args.lombscargle_calculation:
+                    extra_name = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
+                    if args.only_data_during_night:
+                        len_former_time = len(time)
+                        mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
+                        mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
+                        time = time[mask == 0]
+                        data_final = data_final[mask == 0,:]
+                        if args.log_infos:
+                            log.info(f"{len(time)} / {len_former_time} are selected for this time observation window")
+
+                    args_list = [(
+                                lazy_loader,
+                                time,
+                                20 * numpy.log10(data_final[:, index_freq]) if args.stokes.upper() in ('I', 'RM') else data_final[:, index_freq],
+                                args.threshold,
+                                args.normalize_LS,
+                                args.lombscargle_function,
+                                args.log_infos)
+                                for index_freq in range(len(frequencies))
+                                ]
+
+
+                    with multiprocessing.Pool() as pool:
+                        results = pool.map(calculate_LS, args_list)
+
+                    f_LS = [result[0] for result in results]
+                    power_LS = [result[1] for result in results]
+
+                
+                    if args.save_as_hdf5:
+                        save_to_hdf(time,
+                                frequencies,
+                                data_final,
+                                f_LS,
+                                power_LS,
+                                args.stokes,
+                                args.output_directory,
+                                args.key_project,
+                                args.target,
+                                T_exoplanet,
+                                T_star,
+                                extra_name = extra_name)
         
         elif args.reprocess_LS_periodogram == True:
         
@@ -603,91 +648,49 @@ if __name__ == '__main__':
                 extra_name = '_nomaskapplied'
             extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{beam_type}{args.beam_number}'
 
-        if args.lombscargle_calculation:
-            extra_name = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
-            if args.only_data_during_night:
-                len_former_time = len(time)
-                mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
-                mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
-                time = time[mask == 0]
-                data_final = data_final[mask == 0,:]
-                if args.log_infos:
-                    log.info(f"{len(time)} / {len_former_time} are selected for this time observation window")
+            if args.lombscargle_calculation:
+                extra_name = extra_name+f'_{args.lombscargle_function}LS_{args.normalize_LS}'
+                if args.only_data_during_night:
+                    len_former_time = len(time)
+                    mask = ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 > 4) * ((time/(24*60*60)-(time/(24*60*60)).astype(int))*24 < 22) #(* is and, + is or)
+                    mask_2D = numpy.repeat(mask[:, None], data_final.shape[1], axis = 1)
+                    time = time[mask == 0]
+                    data_final = data_final[mask == 0,:]
+                    if args.log_infos:
+                        log.info(f"{len(time)} / {len_former_time} are selected for this time observation window")
 
-            args_list = [(
-                        lazy_loader,
-                        time,
-                        20 * numpy.log10(data_final[:, index_freq]) if args.stokes.upper() in ('I', 'RM') else data_final[:, index_freq],
-                        args.threshold,
-                        args.normalize_LS,
-                        args.lombscargle_function,
-                        args.log_infos)
-                        for index_freq in range(len(frequencies))
-                        ]
+                args_list = [(
+                            lazy_loader,
+                            time,
+                            20 * numpy.log10(data_final[:, index_freq]) if args.stokes.upper() in ('I', 'RM') else data_final[:, index_freq],
+                            args.threshold,
+                            args.normalize_LS,
+                            args.lombscargle_function,
+                            args.log_infos)
+                            for index_freq in range(len(frequencies))
+                            ]
 
 
-            with multiprocessing.Pool() as pool:
-                results = pool.map(calculate_LS, args_list)
+                with multiprocessing.Pool() as pool:
+                    results = pool.map(calculate_LS, args_list)
 
-            #if args.verbose:
-            #    with Profiler() as prof, ResourceProfiler(dt=0.0025) as rprof, CacheProfiler() as cprof:
-            #        with ProgressBar():
-            #            time = time.compute()
-            #        with ProgressBar():
-            #            frequencies = frequencies.compute()
-            #        with ProgressBar():
-            #            data_final = data_final.compute()
-            #        with ProgressBar():
-            #            f_LS = [result[0].compute() for result in results]
-            #        with ProgressBar():
-            #            power_LS = [result[1].compute() for result in results]
-            #    visualize([prof, rprof, cprof,])
-
-            #else:
-            #    time = time.compute()
-            #    frequencies = frequencies.compute()
-            #    data_final = data_final.compute()
-            #    f_LS = [result[0].compute() for result in results]
-            #    power_LS = [result[1].compute() for result in results]
-
-            f_LS = [result[0] for result in results]
-            power_LS = [result[1] for result in results]
+                f_LS = [result[0] for result in results]
+                power_LS = [result[1] for result in results]
                 
         
-            # Concatenating of arrays over observation
-            #time = numpy.concatenate(time_, axis=0)
-            #if numpy.max(frequencies_[-1]) - numpy.max(frequencies_[0]) > 1e-8:
-            #    raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
-            #else:
-            #    frequencies = frequencies_[0]
-            
-            #data_final = numpy.concatenate(data_final_, axis=0)
-            #f_LS = numpy.concatenate(f_LS_, axis=0)
-            #power_LS = numpy.concatenate(power_LS_, axis=0)
-
-
-
-
-            #print(f'time: {time.shape}')
-            #print(f'frequencies: {frequencies.shape}')
-            #print(f'data_final: {data_final.shape}')
-            #print(f'f_LS: {f_LS.shape}')
-            #print(f'power_LS: {power_LS.shape}')
-
-            
-            if args.save_as_hdf5:
-                save_to_hdf(time,
-                        frequencies,
-                        data_final,
-                        f_LS,
-                        power_LS,
-                        args.stokes,
-                        args.output_directory,
-                        args.key_project,
-                        args.target,
-                        T_exoplanet,
-                        T_star,
-                        extra_name = extra_name)
+                if args.save_as_hdf5:
+                    save_to_hdf(time,
+                            frequencies,
+                            data_final,
+                            f_LS,
+                            power_LS,
+                            args.stokes,
+                            args.output_directory,
+                            args.key_project,
+                            args.target,
+                            T_exoplanet,
+                            T_star,
+                            extra_name = extra_name)
 
         if args.plot_results:
             plot_LS_periodogram(frequencies,
