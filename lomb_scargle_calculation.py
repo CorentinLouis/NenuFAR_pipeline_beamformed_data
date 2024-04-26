@@ -484,7 +484,7 @@ if __name__ == '__main__':
                                                 ifile.split('rfimask')[0] + 'spectra' + ifile.split('rfimask')[-1]
                                                 for ifile in beam_files
                                             ]
-                                            for beam_files in rfi_fits_file_paths_list
+                                            for beam_files in rfi_fits_file_paths
                                             ]
 
                 else:       
