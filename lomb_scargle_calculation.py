@@ -425,7 +425,7 @@ if __name__ == '__main__':
                     beam_off = ['2', '3']
                 elif target_type == 'exoplanet':
                     beam_on = ['0']
-                    beam_off = ['1','2', '3']
+                    beam_off = ['1','2','3']
                 else:
                     if args.log_infos:
                         log.info(f"It seems that the target you are looking for isn't in the '{filename_list_type_target}' file you provide. Please check Target name and/or add the target type ('star' or 'exoplanet') info to the file.")
@@ -436,7 +436,7 @@ if __name__ == '__main__':
             else:
                 beam_list = beam_on
             
-            if (target_type == 'star') or ((target_type == 'exoplanet') and (args.beam_off == False)) :
+            if (target_type == 'star') or ((target_type == 'exoplanet') and (args.off_beams == False)) :
                 if args.apply_rfi_mask and args.rfi_mask_level > 0:
                     rfi_fits_file_paths = [[
                             filename
@@ -465,7 +465,7 @@ if __name__ == '__main__':
                         ]]
 
                     rfi_fits_file_paths = [[]]
-            else:  #if ((target_type == 'exoplanet') and (args.beam_off == True)) 
+            else:  #if ((target_type == 'exoplanet') and (args.off_beams == True)) 
                 if args.apply_rfi_mask and args.rfi_mask_level > 0:
                     rfi_fits_file_paths = {
                                             beam_number: [
@@ -534,11 +534,11 @@ if __name__ == '__main__':
                 T_star = lazy_loader.star_period
 
                 extra_name = ''
-                if args.beam_off:
+                if args.off_beams:
                     beam_type = 'OFF'
                 else:
                     beam_type = 'ON'
-                if (target_type == 'star') or ((target_type == 'exoplanet') and (args.beam_off == False)):
+                if (target_type == 'star') or ((target_type == 'exoplanet') and (args.off_beams == False)):
                     beam_number = ''
                 else:
                     beam_number = f'{beam_list[i_beam]}'
