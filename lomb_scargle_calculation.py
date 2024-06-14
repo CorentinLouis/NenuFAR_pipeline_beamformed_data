@@ -675,9 +675,9 @@ if __name__ == '__main__':
         elif args.reprocess_LS_periodogram == True:
 
             if args.off_beams:
-                beam_list = beam_off
+                beam_type = 'OFF'
             else:
-                beam_list = beam_on
+                beam_type = 'ON'
 
                 
             if args.input_hdf5_file == None:
