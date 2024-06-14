@@ -667,14 +667,19 @@ if __name__ == '__main__':
                         mask = (phase >= phase_bins[i]) & (phase < phase_bins[i + 1])
                         stack_data[i] = np.sum(data[mask])
 
-                    if args.periodicity_stacking_calculation:
-                        extra_name_PS = extra_name+f'_stacking_by_revolution_period'
             
 
 
 
 
         elif args.reprocess_LS_periodogram == True:
+
+            if args.off_beams:
+                beam_list = beam_off
+            else:
+                beam_list = beam_on
+
+                
             if args.input_hdf5_file == None:
                 raise RuntimeError("An hdf5 file containing pre-calculated data needs to be given with the --input_hdf5_file argument if --reprocess_LS_periodogram is set as True")
             if args.beam_number == None:
