@@ -74,6 +74,10 @@ class LazyFITSLoader:
             self.log.info(f"Starting searching for exoplanet and star period")
 
         exoplanet_infos = [{
+                            'name': 'GJ_687',
+                            'star_period': 27.77268334772055,
+                            'exoplanet_period': [0.0012369802513831443, 0.014527135405217977]},
+                            {
                             'name': 'AD_LEO',
                             'star_period': 2.23,
                             'exoplanet_period': 2.23},
