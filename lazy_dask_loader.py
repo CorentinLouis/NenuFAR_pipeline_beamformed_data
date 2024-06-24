@@ -75,8 +75,8 @@ class LazyFITSLoader:
 
         exoplanet_infos = [{
                             'name': 'GJ_687',
-                            'star_period': 27.77268334772055,
-                            'exoplanet_period': [0.0012369802513831443, 0.014527135405217977]},
+                            'star_period': 61.8,
+                            'exoplanet_period': 38.142},
                             {
                             'name': 'AD_LEO',
                             'star_period': 2.23,
@@ -114,10 +114,9 @@ class LazyFITSLoader:
                     return info['star_period'], info['exoplanet_period']
             return None, None  # Return None if exoplanet_name is not found
 
-
-        star_period, exoplanet_period = get_exoplanet_info(self.exoplanet_name.upper(), exoplanet_infos)
         if self.log != None:
             self.log.info(f"Searching in pre-defined informations")
+        star_period, exoplanet_period = get_exoplanet_info(self.exoplanet_name.upper(), exoplanet_infos)
         if star_period is not None and exoplanet_period is not None:
             self.exoplanet_period = exoplanet_period
             self.star_period = star_period
