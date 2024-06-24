@@ -313,16 +313,7 @@ def plot_LS_periodogram(frequencies,
                 log.info(f'{isinstance(T_exoplanet,numpy.ndarray)}')
                 log.info(f'{isinstance(T_exoplanet,numpy.float64)}')
 
-
-            if isinstance(T_exoplanet,numpy.float64):
-                axs.vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{\mathrm{exoplanet}}$")
-                axs.vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{exoplanet}}$")
-                if T_exoplanet-T_star !=0:
-                    T_synodique = (T_exoplanet*T_star)/abs(T_exoplanet-T_star)
-                    axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
-                    axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
-
-            elif isinstance(T_exoplanet,numpy.ndarray):
+            if isinstance(T_exoplanet,numpy.ndarray):
                 for index, i_exoplanet in enumerate(T_exoplanet):
                     axs.vlines([i_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{\mathrm{exoplanet "+f'{index}'+"}}$")
                     axs.vlines([i_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{exoplanet "+f'{index}'+"}}$")
@@ -330,6 +321,14 @@ def plot_LS_periodogram(frequencies,
                         T_synodique = (i_exoplanet*T_star)/abs(i_exoplanet-T_star)
                         axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{\mathrm{synodic exoplanet "+f'{index}'+"}}$")
                         axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{synodic exoplanet "+f'{index}'+"}}$")
+            else:
+                axs.vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{\mathrm{exoplanet}}$")
+                axs.vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{exoplanet}}$")
+                if T_exoplanet-T_star !=0:
+                    T_synodique = (T_exoplanet*T_star)/abs(T_exoplanet-T_star)
+                    axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
+                    axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
+
         #axs.xaxis.set_minor_locator(MultipleLocator(1))
         #axs.xaxis.set_major_locator(MultipleLocator(5))
 
