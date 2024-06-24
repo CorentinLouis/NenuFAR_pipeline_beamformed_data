@@ -15,6 +15,7 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.ticker import AutoMinorLocator
 
 from bitarray_to_bytearray import bitarray_to_bytearray
 
@@ -264,35 +265,6 @@ def plot_LS_periodogram(frequencies,
         T_jupiter = 9.9250/24
         T_synodique = (T_io*T_jupiter)/abs(T_io-T_jupiter)
 
-    #if len(frequencies) > 1:
-    #    for index_freq in range(len(frequencies)):
-    #        if background:
-    #            bck = numpy.nanmean(f_LS)
-    #            #sig = numpy.std(f_LS)
-    #            f_LS = (f_LS-bck)#/sig
-    #        axs[index_freq].plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
-#
-    #        #plt.yscale('log')
-    #        axs[index_freq].set_title(f'Frequency: {frequencies[index_freq]} MHz')
-    #        if target == 'Jupiter':
-    #            axs[index_freq].vlines([T_io*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
-    #            axs[index_freq].vlines([T_io*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
-    #            axs[index_freq].vlines([T_jupiter*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{Jup}$")
-    #            axs[index_freq].vlines([T_jupiter*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Jup}$")
-    #            axs[index_freq].vlines([T_synodique*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
-    #            axs[index_freq].vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
-    #        else:
-    #            axs[index_freq].vlines([T_exoplanet*24], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{{target}}$")
-    #            axs[index_freq].vlines([T_exoplanet*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed",label = r"$\frac{1}{2} x T_{{target}}$")
-    #        axs[index_freq].xaxis.set_minor_locator(MultipleLocator(1))
-    #        axs[index_freq].xaxis.set_major_locator(MultipleLocator(5))
-    #        if index_freq == 0:
-    #            axs[index_freq].legend()
-    #    axs[index_freq].set_xlim([(T_exoplanet/10)*24,(T_exoplanet*2)*24])
-    #    axs[index_freq].set_xlabel("Periodicity (Hours)")
-
-    #else:
-
     target_ = target.split('_')
     target = ''
     for index, itarget in enumerate(target_): 
@@ -313,13 +285,26 @@ def plot_LS_periodogram(frequencies,
         axs.plot(1/(f_LS[index_freq])/60/60, (power_LS[index_freq]))
         axs.set_title(f'Frequency: {frequencies[index_freq]} MHz')
 
+
+        # Enable major ticks automatically (default behavior)
+        axs.tick_params(which='major', length=10)
+
+        # Enable minor ticks with AutoMinorLocator
+        axs.minorticks_on()
+        axs.xaxis.set_minor_locator(AutoMinorLocator())
+        axs.yaxis.set_minor_locator(AutoMinorLocator())
+
+        # Customize minor ticks
+        axs.tick_params(which='minor', length=5)
+
+
         if target == 'Jupiter':
-            axs.vlines([T_io*24],          (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', label = r"$T_{Io}$")
-            axs.vlines([T_io*24/2],        (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
-            axs.vlines([T_jupiter*24],     (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{Jup}$")
-            axs.vlines([T_jupiter*24/2],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Jup}$")
-            axs.vlines([T_synodique*24],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y',label = r"$T_{synodic}$")
-            axs.vlines([T_synodique*24/2], (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
+            axs.vlines([T_io*24],          (power_LS[index_freq]).max(), (power_LS[index_freq]).max()*2, colors='r', label = r"$T_{Io}$")
+            axs.vlines([T_io*24/2],        (power_LS[index_freq]).max(), (power_LS[index_freq]).max()*2, colors='r', linestyles="dashed", label = r"$\frac{1}{2} x T_{Io}$")
+            axs.vlines([T_jupiter*24],     (power_LS[index_freq]).max(), (power_LS[index_freq]).max()*2, colors='g',label = r"$T_{Jup}$")
+            axs.vlines([T_jupiter*24/2],   (power_LS[index_freq]).max(), (power_LS[index_freq]).max()*2, colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{Jup}$")
+            axs.vlines([T_synodique*24],   (power_LS[index_freq]).max(), (power_LS[index_freq]).max()*2, colors='y',label = r"$T_{synodic}$")
+            axs.vlines([T_synodique*24/2], (power_LS[index_freq]).max(), (power_LS[index_freq]).max()*2, colors='y', linestyles="dashed",label = r"$\frac{1}{2} x T_{synodic}$")
         else:
             axs.vlines([T_star*24],     (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g',label = r"$T_{\mathrm{"+f'{target}'+"}}$")
             axs.vlines([T_star*24/2],   (power_LS[index_freq]).min(), (power_LS[index_freq]).max(), colors='g', linestyles="dashed",label = r"$\frac{1}{2} x T_{\mathrm{"+f'{target}'+"}}$")
