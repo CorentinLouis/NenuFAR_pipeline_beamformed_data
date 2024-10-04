@@ -368,7 +368,7 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', dest = 'verbose', default = False, action = 'store_true', help = "To print on screen the log infos")
     parser.add_argument('--log_infos', dest = 'log_infos', default = False, action = 'store_true', help = "To print on screen the dask computing info, and control graphics after computation")
     
-    parser.add_argument('--lombscargle_calculation', dest = 'lombscargle_calculation', default = True, action = 'store_true', help = "Set this as False if you don't want to calculate the lomb scargle periodogram. Only processed data will be saved.")
+    parser.add_argument('--lombscargle_calculation', dest = 'lombscargle_calculation', default = False, action = 'store_true', help = "Set this as False if you don't want to calculate the lomb scargle periodogram. Only processed data will be saved.")
     parser.add_argument('--periodicity_stacking_calculation', dest = 'periodicity_stacking_calculation', default = False, action = 'store_true', help = "Set this as True if you want to calculate the stacked (per exoplanet(s) revolution and star rotation periods) timeseries.")
 
     parser.add_argument('--lombscargle_function', dest = 'lombscargle_function', type = str, default = 'scipy', help = "LombScargle package to be used. Options are 'scipy' or 'astropy'")
