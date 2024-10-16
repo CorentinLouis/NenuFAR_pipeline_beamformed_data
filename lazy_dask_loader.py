@@ -83,8 +83,8 @@ class LazyFITSLoader:
                             'exoplanet_period': 2.23},
                             {
                             'name': 'CR_DRA',
-                            'star_period': 2.23,
-                            'exoplanet_period': 2.23},
+                            'star_period': 1.984,
+                            'exoplanet_period': numpy.nan},
                             {
                             'name': 'COROT-7',
                             'star_period': 11.730891133982574,
