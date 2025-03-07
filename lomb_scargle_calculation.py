@@ -86,12 +86,12 @@ def read_csv_to_dict(file_path):
 @numpy.vectorize
 def datetime_to_timestamp(datetime_table):
     ### Function to return time in floating format (from a datetime object)
-    return datetime_table.timestamp()
+    return Time(datetime_table, format="datetime").unix
 
 @numpy.vectorize
 def timestamp_to_datetime(timestamp_table):
     ### Function to return time in datetime format (from a timestamp object)
-    result = datetime.datetime.fromtimestamp(timestamp_table)
+    result = Time(timestamp_table, format="unix").datetime
     return (result)
 
 
