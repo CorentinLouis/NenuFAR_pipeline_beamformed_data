@@ -213,8 +213,8 @@ class LazyFITSLoader:
                             data_ = da.from_array(hdus[-2].data.T, chunks = (chunk_size_frequency, chunk_size_time))
                             
                     rfilevel0_ = da.from_array(hdus[4 + k].data.T, chunks=(chunk_size_time, chunk_size_frequency))
-                    time_ = da.from_array((Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5 + k].data, format='sec')).value, chunks = chunk_size_time)
-
+                    #time_ = da.from_array((Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5 + k].data, format='sec')).value, chunks = chunk_size_time)
+                    time_ = da.from_array(Time(hdus[2].data["timestamp"][0] + hdus[8].data, format="unix").unix, chunks = chunk_size_time)
 
                     #frequency_ = hdus[6 + k].data * u.MHz
                     if self.stokes.lower() != 'rm':
@@ -245,7 +245,7 @@ class LazyFITSLoader:
 
             progress_bar.update()
         progress_bar.close()
-
+    
         return time, time_interp, frequency, data, rfi_mask0
 
 
@@ -504,7 +504,6 @@ class LazyFITSLoader:
         
         lazy_object_data = self._load_data_from_fits(log_infos=log_infos)
         time_, time_interp_, frequency_, data_, rfi_mask_ = lazy_object_data
-
 
         frequencies =  [(frequency_[i_obs].compute()) for i_obs in range(len(frequency_))]
         
@@ -875,6 +874,7 @@ class LazyFITSLoader:
             data_final = data_final.compute()
         if log_infos:
             self.log.info("Ending computing data")
+    
         return time, frequency, data_final
 
     def LS_calculation(self, time, data, threshold, normalized_LS = False, log_infos = False, type_LS = "scipy"):
