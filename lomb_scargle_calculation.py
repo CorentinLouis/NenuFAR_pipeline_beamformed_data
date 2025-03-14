@@ -86,7 +86,9 @@ def read_csv_to_dict(file_path):
 @numpy.vectorize
 def datetime_to_timestamp(datetime_table):
     ### Function to return time in floating format (from a datetime object)
-    return Time(datetime_table, format="datetime").unix
+    result = Time(datetime_table, format="datetime").unix
+#    result = datetime_table.timestamp()
+    return (result)
 
 @numpy.vectorize
 def timestamp_to_datetime(timestamp_table):
@@ -400,7 +402,7 @@ if __name__ == '__main__':
             if args.key_project == '07':
                 sub_path = "*/*/*/"
                 target_type = 'exoplanet'
-                beam_on = ['0']
+                beam_on = ['0','1']
             else:
                 filename_list_type_target = f'{args.root}/list_type_target.txt'
                 list_type_target = read_csv_to_dict(filename_list_type_target)
