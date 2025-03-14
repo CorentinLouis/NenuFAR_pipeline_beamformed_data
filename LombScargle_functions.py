@@ -347,7 +347,7 @@ def calculate_and_plot_LS_distrib_ON_minus_OFF(t_observed_ON, y_observed_ON, t_o
     #            ha='center', va='bottom',
     #            color="orange")
 
-def plot_LS_1D_and_2D(time_datetime, frequencies, data, 
+def plot_LS_1D_and_2D(time_timestamp, frequencies, data, 
                         target = '', # target name
                         target_type = 'exoplanet', # exoplanet or star
                         T_search = 1.22, # Expected periodicity in days (LS will look for periodicity x/ 10 this value)
@@ -361,11 +361,14 @@ def plot_LS_1D_and_2D(time_datetime, frequencies, data,
                         T_title = None,
                         add_extra_T = None,
                         savefig = False,
+                        vline = False,
+                        color_vline = None,
                         filename = 'LS_periodograms.pdf',
                         add_p_values = None):
  
     for i_freq, freq in enumerate(frequencies):
-        time = datetime_to_timestamp(time_datetime)
+        #time = datetime_to_timestamp(time_datetime)
+        time = time_timestamp#datetime_to_timestamp(time_datetime)
         data_ = data[:, frequencies==freq][:,0]
         data_[numpy.abs(data_) > 1] = numpy.nan # unphysical points
         data_[numpy.isnan(data_)] = 0
@@ -387,10 +390,13 @@ def plot_LS_1D_and_2D(time_datetime, frequencies, data,
     power_LS_full[numpy.isnan(power_LS_full)] = 0
     power_LS_full[numpy.isinf(power_LS_full)] = 0
     print(f'power_LS: {power_LS_full.min()}, {power_LS_full.max()}')
-    plot_LS_2D_periodogram(frequency_LS, frequencies, power_LS_full,
+    #plot_LS_2D_periodogram(frequency_LS, frequencies, power_LS_full,
+    plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_full,
                         x_zoomin = x_zoomin,
                         y_zoomin = y_zoomin_2D_periodogram,
                         log_x_scale = log_x_scale,
+                        vline = vline,
+                        color_vline = color_vline,
                         T_search = T_search, T_name = T_title, add_extra_T = add_extra_T,
                         vmin = vmin, vmax = vmax, cmap = cmap, savefig = savefig, filename = filename)
 
@@ -412,6 +418,8 @@ def read_data_and_plot_LS(path_to_data = './',
                           y_T_arrow = None,
                           T_title = None,
                           add_extra_T = None,
+                          vline = False,
+                          color_vline = None,
                           savefig = False,
                           filename = 'LS_periodograms.pdf',
                           add_p_values = None):
@@ -505,8 +513,9 @@ def read_data_and_plot_LS(path_to_data = './',
                         y_zoomin = y_zoomin_2D_periodogram,
                         log_x_scale = log_x_scale,
                         T_search = T_search, T_name = T_title, add_extra_T = add_extra_T,
-                        vmin = vmin, vmax = vmax, cmap = cmap, savefig = savefig, filename = filename)
-
+                        vmin = vmin, vmax = vmax, cmap = cmap, savefig = savefig, filename = filename,
+                        vline = vline,
+                        color_vline = color_vline)
     return(frequency_LS, frequencies, power_LS_full)
     
 
@@ -1175,9 +1184,16 @@ def calculate_and_plot_SNR_LS_periodogram_over_time(time_datetime_beam_ON, frequ
             vmin = numpy.nanmin(SNR_LS_results)
         if vmax==None:
             vmax = numpy.nanmax(SNR_LS_results)
+        
         norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
         #img = ax.contourf(times_plot, 1/frequency_LS/60/60, power_results.T, extend='both', cmap=cmap, zorder=0, norm = norm, levels=20)
-        img = ax.contourf(times_plot, 1/frequency_LS/60/60, SNR_LS_results.T, cmap=cmap, levels=numpy.linspace(vmin,vmax,20), extend='min', vmin=vmin, vmax=vmax)
+        img = ax.contourf(
+                    times_plot, 1/frequency_LS/60/60, numpy.ma.masked_less(SNR_LS_results, vmin).T,
+                    cmap=cmap,
+                    levels=numpy.linspace(vmin,vmax,20),
+                    extend='max',
+                    vmin=vmin, vmax=vmax,
+                    zorder = 1)
         
         ax.set_ylabel(f'Periodicities (hours)'+'\n'+f'(for freq. {i_freq:.2f} MHz)')
         #ax.grid(True)
@@ -1235,9 +1251,11 @@ def calculate_and_plot_SNR_LS_periodogram_over_time(time_datetime_beam_ON, frequ
                     linestyle='--',
                     linewidth=1.5,
                     alpha=0.6,
-                    label=f"{value['T_name']}"
+                    label=f"{value['T_name']}",
+                    zorder = 0
                 )
-                line.set_dashes([10, 20])  # [dash length, space length]
+                #line.set_dashes([10, 20])  # [dash length, space length]
+                line.set_dashes([5, 2.5])  # [dash length, space length]
 
                 # Adding arrows at the edges
                 # Left arrow
@@ -1307,12 +1325,15 @@ def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
                             add_extra_T = None, x_zoomin = None, y_zoomin = None, vmin = None, vmax = None,
                             log_x_scale = False,
                             cmap = 'inferno',
+                            vline = False,
+                            color_vline = None,
                             savefig = False, filename = 'SNR_LS_2D_periodogram.pdf'):
 
     SNR_LS_2D = numpy.zeros(power_LS_2D.shape)
     for i_freq, freq in enumerate(frequencies):
         SNR_tmp =  numpy.nanstd(power_LS_2D[i_freq,:]) 
-        SNR_LS_2D[i_freq,:] = power_LS_2D[i_freq,:]/SNR_tmp
+        if SNR_tmp != 0:
+            SNR_LS_2D[i_freq,:] = power_LS_2D[i_freq,:]/SNR_tmp
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -1323,7 +1344,12 @@ def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
     print(vmin,vmax)
     norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
     #img = ax.contourf(times_plot, 1/frequency_LS/60/60, power_results.T, extend='both', cmap=cmap, zorder=0, norm = norm, levels=20)        
-    im = ax.contourf(1/frequency_LS/60/60, frequencies, SNR_LS_2D, cmap=cmap, levels=numpy.linspace(vmin,vmax,20), extend='min', vmin=vmin, vmax=vmax)
+    im = ax.contourf(
+                1/frequency_LS/60/60, frequencies, SNR_LS_2D,
+                cmap=cmap,
+                levels=numpy.linspace(vmin,vmax,20),
+                extend='max', vmin=vmin, vmax=vmax,
+                zorder = 1)
     plt.colorbar(im, ax=ax, label='SNR')
 
     ax.xaxis.set_major_locator(MultipleLocator(5))
@@ -1345,11 +1371,32 @@ def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
     specific_periodicities = [T_search*24]
     specific_periodicities_name = [T_name]
     if add_extra_T != None:
+        
+            
         ind_extra_T = 0
         for ind, value in add_extra_T.items():
             ind_extra_T=ind_extra_T+1
             specific_periodicities.append(value['T_value'])
             specific_periodicities_name.append(value['T_name'])
+            if vline:
+                if color_vline == None:
+                    if cmap == 'inferno':
+                        color_vline = 'red'
+                    elif cmap == 'Greys':
+                        color_vline = 'red'
+                    else:
+                        color_vline = 'k'
+                line, = ax.plot(
+                    [value['T_value'], value['T_value']],
+                    [numpy.min(frequencies), numpy.max(frequencies)],
+                    color=color_vline,
+                    linestyle='--',
+                    linewidth=1.5,
+                    alpha=0.6,
+                    label=f"{value['T_name']}",
+                    zorder = 0
+                    )
+                line.set_dashes([5, 2.5])  # [dash length, space length]
         # Convert periodicities to your x-axis units
     # Create a secondary x-axis at the top for periodicities
     secax = ax.secondary_xaxis('top')
@@ -1410,6 +1457,7 @@ def plot_LS_2D_periodogram(frequency_LS, frequencies, power_LS_2D,
             ind_extra_T=ind_extra_T+1
             specific_periodicities.append(value['T_value'])
             specific_periodicities_name.append(value['T_name'])
+            
         # Convert periodicities to your x-axis units
     # Create a secondary x-axis at the top for periodicities
     secax = ax.secondary_xaxis('top')
