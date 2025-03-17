@@ -404,6 +404,7 @@ def plot_LS_1D_and_2D(time_timestamp, frequencies, data,
 
 def read_data_and_plot_LS(path_to_data = './',
                           file_name = '',
+                          stokes = 'VI',
                           target = '', # target name
                           target_type = 'exoplanet', # exoplanet or star
                           T_search = 1.22, # Expected periodicity in days (LS will look for periodicity x/ 10 this value)
@@ -472,7 +473,11 @@ def read_data_and_plot_LS(path_to_data = './',
         if beam_on:
             time_real_beam_ON = datetime_to_timestamp(time_datetime_beam_ON)
             data_for_LS_beam_ON = data_final_beam_ON[:, frequencies_beam_ON==freq][:,0]
-            data_for_LS_beam_ON[numpy.abs(data_for_LS_beam_ON) > 1] = numpy.nan # unphysical points
+            if stokes == 'VI':
+                data_for_LS_beam_ON[numpy.abs(data_for_LS_beam_ON) > 1] = numpy.nan # unphysical points
+            if stokes == 'I':
+                data_for_LS_beam_ON[data_for_LS_beam_ON > 1e15] = numpy.nan # unphysical points
+                data_for_LS_beam_ON[data_for_LS_beam_ON < 1] = numpy.nan # unphysical points
             data_for_LS_beam_ON[numpy.isnan(data_for_LS_beam_ON)] = 0
             data_for_LS_beam_ON[numpy.isinf(data_for_LS_beam_ON)] = 0
 
