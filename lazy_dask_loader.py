@@ -612,7 +612,7 @@ class LazyFITSLoader:
                                                             rfi_mask_to_apply)       
                     elif stokes == 'L':
                         if data_[i_obs].shape[2] == 4:
-                            data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                            data_stokes_L = numpy.sqrt(data_[i_obs][:, w_frequency, stokes_index['Q']]**2 + data_[i_obs][:, w_frequency, stokes_index['U']]**2)
                         else:
                             data_stokes_L = data_[i_obs][:, index_frequency, stokes_index[stokes]]
                         if self.interpolation_in_time:
@@ -629,7 +629,7 @@ class LazyFITSLoader:
                                                         dtype=float   
                                                         )
                         else:
-                            data_tmp_ = self._multiply_data(data_tmp_, rfi_mask_to_apply)
+                            data_tmp_ = self._multiply_data(data_stokes_L, rfi_mask_to_apply)
 
                     else: # elif stokes != 'L' & != VI:
                         if self.interpolation_in_time:
@@ -669,8 +669,9 @@ class LazyFITSLoader:
                             data_tmp_ = data_[i_obs][:, w_frequency]
 
                     elif stokes == 'L':
+                        print(data_[i_obs].shape[2])
                         if data_[i_obs].shape[2] == 4:
-                            data_stokes_L = numpy.sqrt(self._multiply_data((data_[i_obs][:, w_frequency, stokes_index['Q']])**2, (data_[i_obs][:, w_frequency, stokes_index['U']])**2))
+                            data_stokes_L = numpy.sqrt(data_[i_obs][:, w_frequency, stokes_index['Q']]**2 + data_[i_obs][:, w_frequency, stokes_index['U']]**2)
                         else:
                             data_stokes_L = data_[i_obs][:, index_frequency, stokes_index[stokes]]
                         if self.interpolation_in_time:
