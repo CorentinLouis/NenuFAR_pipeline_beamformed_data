@@ -214,7 +214,7 @@ class LazyFITSLoader:
                             
                     rfilevel0_ = da.from_array(hdus[4 + k].data.T, chunks=(chunk_size_time, chunk_size_frequency))
                     #time_ = da.from_array((Time(hdus[2].data['timestamp'][0], format='unix') + TimeDelta(hdus[5 + k].data, format='sec')).value, chunks = chunk_size_time)
-                    time_ = da.from_array(Time(hdus[2].data["timestamp"][0] + hdus[8].data, format="unix").unix, chunks = chunk_size_time)
+                    time_ = da.from_array(Time(hdus[2].data["timestamp"][0] + hdus[5+k].data, format="unix").unix, chunks = chunk_size_time)
 
                     #frequency_ = hdus[6 + k].data * u.MHz
                     if self.stokes.lower() != 'rm':
