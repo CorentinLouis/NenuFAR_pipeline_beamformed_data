@@ -104,8 +104,16 @@ python script.py -key_project 07 -target Jupiter --apply_rfi_mask --rfi_mask_lev
 python script.py --plot_only --input_hdf5_file ./data/processed/processed_data_file.hdf5
 ```
 
-### Example for Louis et al. paper (2025) "Detection method for periodic radio emissions from an exoplanet's magnetosphere or a star--planet interaction"
+## Example of Lomb Scargle Periodograms of Louis et al. (2025) "Detection method for periodic radio emissions from an exoplanet's magnetosphere or a star--planet interaction" publication
+### Example with a simulated signal
+The `normal_distribution_study.ipynb` Jupyter Notebook allows to understand how the Lomb–Scargle periodogram performs on a simulated signal. Initially, it use a sine wave with a known periodicity and random observation gaps. Next, it produce a similar simulated signal, but this time we control the observation windows and gaps between observations to study the impact of observaion regularity on the Lomb–Scargle periodogram, hence mimicking real observing conditions. Finally, it embed the signal in random noise with a normal distribution and study how varying the signal-to-noise ratio affects the detection of the underlying periodic signal.
+
+This Jupyter notebook allows to reproduce the Figures of Section 2 the Louis et al. paper (2025) "Detection method for periodic radio emissions from an exoplanet's magnetosphere or a star--planet interaction" publication
+
+### Example with real NenuFAR data from KP O7 observations of Jupiter
+
+First, the NenuFAR KP07 data were processed using the following command
 ```bash
 python3 lomb_scargle_calculation.py -key_project 07 -target Jupiter --stokes VI --main_directory_path './data/' --apply_rfi_mask --rfi_mask_level 0  --rfi_mask_level0_percentage 50 --interpolation_in_time --interpolation_in_time_value 600 --interpolation_in_frequency --interpolation_in_frequency_value 1 --save_as_hdf5 --output_directory './outputs/' --frequency_interval 8 90 --log_infos
 ```
-Once the processed file has been created, the specifiv lomb-scargle periodograms displayed in Louis et al. (2025) can be calculated as presented in the `Louis_2025_LS_Jupiter.ipynb` file
+Once the processed file has been created (accessible upon request to corentin.louis@obspm.fr), the specific lomb-scargle periodograms displayed in Louis et al. (2025) can be calculated using the `Louis_2025_LS_Jupiter.ipynb` Jupyter Notebook.
