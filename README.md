@@ -30,6 +30,10 @@ python3 script.py -key_project <project_number> -target <target_name>
 | `--main_directory_path` | `./data/` | Path where observations are stored. |
 | `--stokes` | `V` | Stokes parameter to analyze (`I`, `V`, `V+`, `V-`, `VI`, `Q`, `U`, `L`). |
 | `--threshold` | `None` | Threshold to be applied for Lomb-Scargle calculation. All data above this threshold won't be taken into account |
+| `--frequency_interval` | `[10, 90]` | Half-open minimal and maximal frequency range for Lomb-Scargle analysis. |
+| `--only_data_during_night` | `False` | Select only data recorded during night time (>4 hours, <22 hours UT). |
+| `--off_beams` | `False` | Analyze off-beam observations. |
+
 
 #### RFI Masking
 | Argument | Default | Description |
@@ -53,6 +57,14 @@ python3 script.py -key_project <project_number> -target <target_name>
 | `--lombscargle_function` | `scipy` | Lomb-Scargle package to use (`scipy` or `astropy`). |
 | `--normalize_LS` | `False` | Normalize Lomb-Scargle periodogram. |
 | `--remove_background_to_LS` | `False` | Remove background from Lomb-Scargle plots. |
+| `--periodicity_stacking_calculation` | `False` | Compute stacked periodicity for exoplanet revolution or star rotation. |
+
+#### Logging & Verbosity
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--verbose` | `False` | Print log information to the screen. |
+| `--log_infos` | `False` | Print Dask computing info and control graphics after computation. |
+
 
 #### Plotting & Output
 | Argument | Default | Description |
