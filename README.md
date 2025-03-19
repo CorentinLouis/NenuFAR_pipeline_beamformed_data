@@ -73,7 +73,7 @@ python3 script.py -key_project <project_number> -target <target_name>
 
 ## Example Commands
 
-### Process data from KP O7 observations of Jupiter with Default Parameters and save results 
+### Process data from KP 07 observations of Jupiter with Default Parameters and save results 
 ```bash
 python script.py -key_project 07 -target Jupiter --save_as_hdf5
 ```
@@ -89,14 +89,11 @@ python script.py -key_project 07 -target Jupiter --apply_rfi_mask --rfi_mask_lev
 
 ### Generate Only Plots from Pre-Processed Data
 ```bash
-python script.py --plot_only --input_hdf5_file ./data/processed/processed_data.hdf5
+python script.py --plot_only --input_hdf5_file ./data/processed/processed_data_file.hdf5
 ```
 
-## Notes
-- The script supports advanced preprocessing, including RFI masking and interpolation.
-- Results can be saved in HDF5 format for later analysis.
-- Lomb-Scargle calculations can be performed using either `scipy` or `astropy`.
-
-## License
-This project is open-source and freely available for use.
-
+### Example for Louis et al. paper (submitted to A&A) "Detection method for periodic radio emissions from an exoplanet's magnetosphere or a star--planet interaction"
+```bash
+python3 lomb_scargle_calculation.py -key_project 07 -target Jupiter --main_directory_path './data/' --apply_rfi_mask --rfi_mask_level 0 --interpolation_in_time --interpolation_in_time_value 600 --interpolation_in_frequency --interpolation_in_frequency_value 1 --save_as_hdf5 --output_directory './outputs/' --frequency_interval 8 90 --plot_results --log_infos --rfi_mask_level0_percentage 50 --stokes VI --lombscargle_function 'astropy'
+```
+Once the processed file has been created, the lomb-scargle periodograms can be calculated as presented in the Louis_2025_LS_Jupiter.ipynb file
