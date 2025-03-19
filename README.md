@@ -104,8 +104,8 @@ python script.py -key_project 07 -target Jupiter --apply_rfi_mask --rfi_mask_lev
 python script.py --plot_only --input_hdf5_file ./data/processed/processed_data_file.hdf5
 ```
 
-### Example for Louis et al. paper (submitted to A&A) "Detection method for periodic radio emissions from an exoplanet's magnetosphere or a star--planet interaction"
+### Example for Louis et al. paper (2025) "Detection method for periodic radio emissions from an exoplanet's magnetosphere or a star--planet interaction"
 ```bash
 python3 lomb_scargle_calculation.py -key_project 07 -target Jupiter --stokes VI --main_directory_path './data/' --apply_rfi_mask --rfi_mask_level 0  --rfi_mask_level0_percentage 50 --interpolation_in_time --interpolation_in_time_value 600 --interpolation_in_frequency --interpolation_in_frequency_value 1 --save_as_hdf5 --output_directory './outputs/' --frequency_interval 8 90 --log_infos
 ```
-Once the processed file has been created, the lomb-scargle periodograms can be calculated as presented in the `Louis_2025_LS_Jupiter.ipynb` file
+Once the processed file has been created, the specifiv lomb-scargle periodograms displayed in Louis et al. (2025) can be calculated as presented in the `Louis_2025_LS_Jupiter.ipynb` file
