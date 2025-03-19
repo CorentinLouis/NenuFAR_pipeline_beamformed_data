@@ -840,9 +840,30 @@ class LazyFITSLoader:
             raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
         else:
             frequency = frequency_final_[0]
+        #frequency_final = da.concatenate(frequency_final_, axis = 0)
+        # Then check if all frequency_final[:,0] == same
+        # if not, needs of re-aligning everything (how? That's the question)
         
-        #frequency = frequency_final_[0]
         data_final = da.concatenate(data_final_, axis=0)
+
+
+
+        # Because if observations were done with 2 different lanes, it is possible that there is duplicate in time array
+        # So checking it and correcting it if necessary
+
+        unique_times = numpy.unique(time_final)
+        merged_data = numpy.full((len(unique_times), data_final.shape[1]), numpy.nan)
+
+        # Iterate through unique times and merge corresponding rows
+        for i, t in enumerate(unique_times):
+            mask = data_final == t  # Find indices of this time in the original array
+            merged_data[i] = numpy.nanmax(data_final[mask], axis=0)  # Merge using nanmax --> We can do that as making observations with different lanes implies different frequencies.
+
+        # Replace old arrays with merged ones
+        time_final = unique_times
+        data_final = merged_data
+
+
 
         #if log_infos:
         #    self.log.info("Starting saving data as dask arrays")
