@@ -1,6 +1,7 @@
 # A Pipeline to process NenuFAR beamformed data and calculate Lomb-Scargle Periodograms
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![DOI](https://zenodo.org/badge/723092575.svg)](https://zenodo.org/badge/latestdoi/723092575)
 
 ## Overview
 This pipeline process and analyse the NenuFAR radio beamformed data of a given possible radio emitter (such as a planet, exoplanet, or star). It allows various processing steps ( including RFI masking, interpolation in time and frequency), and analyzing methods (Lomb-Scargle Periodogram calculation, periodicity stacking)
