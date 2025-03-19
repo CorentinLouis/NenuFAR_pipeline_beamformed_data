@@ -96,4 +96,4 @@ python script.py --plot_only --input_hdf5_file ./data/processed/processed_data_f
 ```bash
 python3 lomb_scargle_calculation.py -key_project 07 -target Jupiter --main_directory_path './data/' --apply_rfi_mask --rfi_mask_level 0 --interpolation_in_time --interpolation_in_time_value 600 --interpolation_in_frequency --interpolation_in_frequency_value 1 --save_as_hdf5 --output_directory './outputs/' --frequency_interval 8 90 --plot_results --log_infos --rfi_mask_level0_percentage 50 --stokes VI --lombscargle_function 'astropy'
 ```
-Once the processed file has been created, the lomb-scargle periodograms can be calculated as presented in the Louis_2025_LS_Jupiter.ipynb file
+Once the processed file has been created, the lomb-scargle periodograms can be calculated as presented in the `Louis_2025_LS_Jupiter.ipynb` file
