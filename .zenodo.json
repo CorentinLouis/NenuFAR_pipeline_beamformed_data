@@ -1,0 +1,94 @@
+{
+    "creators": [
+        {
+            "orcid": "0000-0002-9552-8822",
+            "affiliation": {
+                "https://ror.org/02eptjh02":
+                "https://ror.org/051sx6d27"
+            },
+            "name": "Louis, Corentin K."
+        },
+        {
+            "name": "Hess, Sébastien L. G",
+            "orcid": "0000-0001-5753-0991",
+            "affiliation": "ONERA, Toulouse, France"
+        },
+        {
+            "name": "Cecconi, Baptiste",
+            "orcid": "0000-0001-7915-5571",
+            "affiliation": "https://ror.org/02eptjh02"
+        },
+        {
+            "name": "Zarka, Philippe",
+            "orcid": "0000-0003-1672-9878",
+            "affiliation": "https://ror.org/02eptjh02"
+        },
+        {
+            "name": "Lamy, Laurent",
+            "orcid": "0000-0002-8428-1369",
+            "affiliation": {
+                "https://ror.org/02eptjh02":
+                "https://ror.org/00ssy9q55"
+            }
+        },
+        {
+            "name": "Aicardi, Stéphane",
+            "orcid": "0000-0003-4475-0930",
+            "affiliation": "DIO, Observatoire de Paris-PSL"
+        },
+        {
+            "name": "Loh, Alan",
+            "orcid": "0000-0002-4698-9542",
+            "affiliation": "https://ror.org/02eptjh02"
+        }
+    ],
+
+    "license": "MIT",
+
+    "title": "maserlib/ExPRES",
+
+    "description": "ExPRES (Exoplanetary and Planetary Radio Emission Simulator) reproduces the occurrence of CMI-generated radio emissions from planetary magnetospheres, exoplanets or star-planet interacting systems in time-frequency plane, with special attention given to computation of the radio emission beaming at and near its source. Physical information drawn from such radio observations may include the location and dynamics of the radio sources, the type of current system leading to electron acceleration and their energy and, for exoplanetary systems, the magnetic field strength, the orbital period of the emitting body and the rotation period, tilt and offset of the planetary magnetic field. Most of these parameters can be remotely measured only via radio observations. ExPRES code provides the proper framework of analysis and interpretation for past (Cassini, Voyager, Galileo), current (Juno, ground-based radio telescopes) and future (BepiColombo, Juice) observations of planetary radio emissions, as well as for future detection of radio emissions from exoplanetary systems.",
+
+    "Notes": "This work has also been supported by the EPN-2024-RI (Europlanet 2024 Research Infrastructure) project, under contract number 871149 with the EC. ",
+
+    "keywords": ["Radio Emissions", "Simulations", "Planetary"],
+
+    "related_identifiers": [
+        {
+            "scheme": "ascl",
+            "identifier": "http://ascl.net/1902.009",
+            "relation": "isAlternateIdentifier",
+            "upload_type": "software"
+        },
+        {
+            "scheme": "doi",
+            "identifier": "10.1051/0004-6361/201935161",
+            "relation": "documents",
+            "upload_type": "journal-article"
+        },
+        {
+            "scheme": "url",
+            "identifier": "https://github.com/CorentinLouis/SPACE_labelling_tool/tree/v2.0.1",
+            "relation": "isSupplementedBy",
+            "resource_type": "software"
+        },
+        {
+            "scheme": "doi",
+            "identifier": "10.3389/fspas.2022.1001166",
+            "relation": "documents",
+            "resource_type": "publication-article"
+        },
+        {
+          "scheme":"url",
+          "identifier":"https://space-labelling-tool.readthedocs.io/",
+          "relation":"isDocumentedBy",
+          "resource_type":"publication-softwaredocumentation"
+        }
+    ],
+    "communities": [
+        {"identifier": "Europlanet-VESPA"},
+        {"identifier": "Space Physics and Aeronomy"}
+    ],
+
+    "grants": [{"id":"871149"}]
+}
