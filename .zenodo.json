@@ -51,10 +51,5 @@
             "resource_type": "publication-article"
         },
     ],
-    "communities": [
-        {"identifier": ""},
-        {"identifier": "}
-    ],
-
     "grants": [{'id': '10.3030/101020459'}]
 }
