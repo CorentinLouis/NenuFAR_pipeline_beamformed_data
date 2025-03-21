@@ -58,12 +58,6 @@
             "identifier": "https://github.com/CorentinLouis/NenuFAR_pipeline_beamformed_data/",
             "relation": "isSupplementedBy",
             "resource_type": "software"
-        },
-        {
-            "scheme": "doi",
-            "identifier": "",
-            "relation": "documents",
-            "resource_type": "publication-article"
         }
     ],
     "grants": [
