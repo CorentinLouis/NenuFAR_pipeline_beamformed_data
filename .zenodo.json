@@ -42,9 +42,9 @@
         }
     ],
     "license": "MIT",
-    "title": "    NenuFAR_pipeline_beamformed_data",
+    "title": "NenuFAR_pipeline_beamformed_data",
     "description": "This pipeline process and analyse the NenuFAR radio beamformed data of a given possible radio emitter (such as a planet, exoplanet, or star). It allows various processing steps ( including RFI masking, interpolation in time and frequency), and analyzing methods (Lomb-Scargle Periodogram calculation, periodicity stacking)",
-    "Notes": "This work has also been supported by the ERC under the European Union’s Horizon 2020 research and innovation program (grant agreement N◦101020459—Exoradio)",
+    "notes": "This work has also been supported by the ERC under the European Union’s Horizon 2020 research and innovation program (grant agreement N◦101020459—Exoradio)",
     "keywords": [
         "Radio Emissions",
         "Radioastronomy",
@@ -62,7 +62,7 @@
     ],
     "grants": [
         {
-            "id": "10.3030/101020459"
+            "id": "EC-H2020-101020459"
         }
     ]
 }
