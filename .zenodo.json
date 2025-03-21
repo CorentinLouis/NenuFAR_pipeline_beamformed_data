@@ -42,7 +42,7 @@
         }
     ],
     "license": "MIT",
-    "title": "NenuFAR_pipeline_beamformed_data",
+    "title": "A Pipeline to process NenuFAR beamformed data and calculate Lomb-Scargle Periodograms",
     "description": "This pipeline process and analyse the NenuFAR radio beamformed data of a given possible radio emitter (such as a planet, exoplanet, or star). It allows various processing steps ( including RFI masking, interpolation in time and frequency), and analyzing methods (Lomb-Scargle Periodogram calculation, periodicity stacking)",
     "notes": "This work has also been supported by the ERC under the European Union’s Horizon 2020 research and innovation program (grant agreement N◦101020459—Exoradio)",
     "keywords": [
