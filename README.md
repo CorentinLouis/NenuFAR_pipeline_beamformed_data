@@ -1,4 +1,4 @@
-# A Pipeline to process NenuFAR beamformed data and calculate Lomb-Scargle Periodograms
+# A Pipeline to process NenuFAR beamformed data and calculate Lomb-Scargle Periodograms (V1.0.0)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![DOI](https://zenodo.org/badge/723092575.svg)](https://zenodo.org/badge/latestdoi/723092575)
