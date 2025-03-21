@@ -840,9 +840,13 @@ class LazyFITSLoader:
             raise ValueError("Frequency observation are not the same. Something needs to be modified in the function. Exiting.")
         else:
             frequency = frequency_final_[0]
+        #frequency_final = da.concatenate(frequency_final_, axis = 0)
+        # Then check if all frequency_final[:,0] == same
+        # if not, needs of re-aligning everything (how? That's the question)
         
-        #frequency = frequency_final_[0]
         data_final = da.concatenate(data_final_, axis=0)
+
+
 
         #if log_infos:
         #    self.log.info("Starting saving data as dask arrays")
@@ -876,6 +880,30 @@ class LazyFITSLoader:
         if log_infos:
             self.log.info("Ending computing data")
     
+        
+
+        # Because if observations were done with 2 different lanes, it is possible that there is duplicate in time array
+        # So checking it and correcting it if necessary
+
+        unique_times = numpy.unique(time)
+        merged_data = numpy.full((len(unique_times), data_final.shape[1]), numpy.nan)
+
+        # Iterate through unique times and merge corresponding rows
+        for i_, t_ in enumerate(unique_times):
+            mask = time == t_  # Find indices of this time in the original array
+            # Merge using nanmax --> We can do that as making observations with different lanes implies different frequencies.
+            if numpy.any(mask):  # Only apply nanmax if at least one match exists
+                merged_data[i_] = numpy.nanmax(data_final[mask], axis=0)
+            else:
+                merged_data[i_] = numpy.nan  # If no match, keep NaN values
+  
+
+        # Replace old arrays with merged ones
+        time = unique_times
+        data_final = merged_data
+
+
+
         return time, frequency, data_final
 
     def LS_calculation(self, time, data, threshold, normalized_LS = False, log_infos = False, type_LS = "scipy"):

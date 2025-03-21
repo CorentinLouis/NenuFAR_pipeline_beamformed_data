@@ -401,7 +401,7 @@ if __name__ == '__main__':
         if args.reprocess_LS_periodogram == False:
             if args.key_project == '07':
                 sub_path = "*/*/*/"
-                target_type = 'exoplanet'
+                target_type = 'star'
                 beam_on = ['0','1']
             else:
                 filename_list_type_target = f'{args.root}/list_type_target.txt'
@@ -542,7 +542,6 @@ if __name__ == '__main__':
                 else:
                     extra_name = '_nomaskapplied'
                 extra_name = extra_name+'_'+f'{int(args.frequency_interval[0])}-{int(args.frequency_interval[1])}MHz_{beam_type}{beam_number}'
-
 
                 if args.save_as_hdf5:
                     save_preliminary_data_to_hdf5(time,
