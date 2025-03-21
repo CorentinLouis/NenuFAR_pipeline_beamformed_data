@@ -3,40 +3,55 @@
         {
             "name": "Louis, Corentin K.",
             "orcid": "0000-0002-9552-8822",
-            "affiliation": ["https://ror.org/02eptjh02","https://ror.org/01vqrde47"],
+            "affiliation": [
+                "https://ror.org/02eptjh02",
+                "https://ror.org/01vqrde47"
+            ]
         },
         {
             "name": "Loh, Alan",
             "orcid": "0000-0002-4698-9542",
-            "affiliation": ["https://ror.org/02eptjh02","https://ror.org/01vqrde47"],
+            "affiliation": [
+                "https://ror.org/02eptjh02",
+                "https://ror.org/01vqrde47"
+            ]
         },
         {
             "name": "Zarka, Philippe",
             "orcid": "0000-0003-1672-9878",
-            "affiliation": ["https://ror.org/02eptjh02","https://ror.org/01vqrde47"],
+            "affiliation": [
+                "https://ror.org/02eptjh02",
+                "https://ror.org/01vqrde47"
+            ]
         },
         {
             "name": "Mauduit, Emilie",
             "orcid": "0000-0001-5294-2890",
-            "affiliation": ["https://ror.org/02eptjh02","https://ror.org/01vqrde47"],
+            "affiliation": [
+                "https://ror.org/02eptjh02",
+                "https://ror.org/01vqrde47"
+            ]
         },
         {
             "name": "Girard, Julien N.",
             "orcid": "0000-0003-0432-403X",
-            "affiliation": ["https://ror.org/02eptjh02","https://ror.org/01vqrde47"],
-        },
+            "affiliation": [
+                "https://ror.org/02eptjh02",
+                "https://ror.org/01vqrde47"
+            ]
+        }
     ],
-
     "license": "MIT",
-
     "title": "    NenuFAR_pipeline_beamformed_data",
-
     "description": "This pipeline process and analyse the NenuFAR radio beamformed data of a given possible radio emitter (such as a planet, exoplanet, or star). It allows various processing steps ( including RFI masking, interpolation in time and frequency), and analyzing methods (Lomb-Scargle Periodogram calculation, periodicity stacking)",
-
     "Notes": "This work has also been supported by the ERC under the European Union’s Horizon 2020 research and innovation program (grant agreement N◦101020459—Exoradio)",
-
-    "keywords": ["Radio Emissions", "Radioastronomy", "Data Processing", "Data Analysis", "Simulations"],
-
+    "keywords": [
+        "Radio Emissions",
+        "Radioastronomy",
+        "Data Processing",
+        "Data Analysis",
+        "Simulations"
+    ],
     "related_identifiers": [
         {
             "scheme": "url",
@@ -49,7 +64,7 @@
             "identifier": "",
             "relation": "documents",
             "resource_type": "publication-article"
-        },
+        }
     ],
     "grants": [
         {
