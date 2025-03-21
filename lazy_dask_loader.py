@@ -848,23 +848,6 @@ class LazyFITSLoader:
 
 
 
-        # Because if observations were done with 2 different lanes, it is possible that there is duplicate in time array
-        # So checking it and correcting it if necessary
-
-        unique_times = numpy.unique(time_final)
-        merged_data = numpy.full((len(unique_times), data_final.shape[1]), numpy.nan)
-
-        # Iterate through unique times and merge corresponding rows
-        for i, t in enumerate(unique_times):
-            mask = data_final == t  # Find indices of this time in the original array
-            merged_data[i] = numpy.nanmax(data_final[mask], axis=0)  # Merge using nanmax --> We can do that as making observations with different lanes implies different frequencies.
-
-        # Replace old arrays with merged ones
-        time_final = unique_times
-        data_final = merged_data
-
-
-
         #if log_infos:
         #    self.log.info("Starting saving data as dask arrays")
         #da.to_hdf5(output_directory+'preliminary_dask_array_data-'+self.stokes+'_LT'+self.key_project+'_'+self.exoplanet_name+extra_name+'.hdf5', {'time': time_final, 'frequency': frequency, 'data': data_final})  
@@ -897,6 +880,30 @@ class LazyFITSLoader:
         if log_infos:
             self.log.info("Ending computing data")
     
+        
+
+        # Because if observations were done with 2 different lanes, it is possible that there is duplicate in time array
+        # So checking it and correcting it if necessary
+
+        unique_times = numpy.unique(time)
+        merged_data = numpy.full((len(unique_times), data_final.shape[1]), numpy.nan)
+
+        # Iterate through unique times and merge corresponding rows
+        for i_, t_ in enumerate(unique_times):
+            mask = time == t_  # Find indices of this time in the original array
+            # Merge using nanmax --> We can do that as making observations with different lanes implies different frequencies.
+            if numpy.any(mask):  # Only apply nanmax if at least one match exists
+                merged_data[i_] = numpy.nanmax(data_final[mask], axis=0)
+            else:
+                merged_data[i_] = numpy.nan  # If no match, keep NaN values
+  
+
+        # Replace old arrays with merged ones
+        time = unique_times
+        data_final = merged_data
+
+
+
         return time, frequency, data_final
 
     def LS_calculation(self, time, data, threshold, normalized_LS = False, log_infos = False, type_LS = "scipy"):
