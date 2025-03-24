@@ -572,7 +572,9 @@ class LazyFITSLoader:
 
             if len(w_frequency) != 0:
                 if self.apply_rfi_mask == True:
-                    rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
+                    #with dask.config.set(**{'array.slicing.split_large_chunks': True}):
+                    rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency].rechunk((time_[i_obs].chunks[0]))
+
 
             #2024-03-18 18:02:16 | INFO: Starting 77 / 154 observation
             #/data/clouis/LT02/NenuFAR_pipeline_beamformed_data/lazy_dask_loader.py:362: PerformanceWarning: Slicing is producing a large chunk. To accept the large
@@ -607,8 +609,8 @@ class LazyFITSLoader:
                                                         dtype=float   
                                                         )
                         else:
-                            data_tmp_ = self._multiply_data(self.safe_divide(data_[i_obs][:, w_frequency,  stokes_index['V']],
-                                                                            data_[i_obs][:, w_frequency,  stokes_index['I']]),
+                            data_tmp_ = self._multiply_data(self.safe_divide(data_[i_obs][:, w_frequency,  stokes_index['V']].rechunk((time_[i_obs].chunks[0])),
+                                                                            data_[i_obs][:, w_frequency,  stokes_index['I']].rechunk((time_[i_obs].chunks[0]))),
                                                             rfi_mask_to_apply)       
                     elif stokes == 'L':
                         if data_[i_obs].shape[2] == 4:
@@ -629,7 +631,7 @@ class LazyFITSLoader:
                                                         dtype=float   
                                                         )
                         else:
-                            data_tmp_ = self._multiply_data(data_stokes_L, rfi_mask_to_apply)
+                            data_tmp_ = self._multiply_data(data_stokes_L.rechunk((time_[i_obs].chunks[0])), rfi_mask_to_apply)
 
                     else: # elif stokes != 'L' & != VI:
                         if self.interpolation_in_time:
@@ -646,7 +648,7 @@ class LazyFITSLoader:
                                                         dtype=float   
                                                         )
                         else:
-                            data_tmp_ = self._multiply_data(data_[i_obs][:, w_frequency,  stokes_index[stokes]], rfi_mask_to_apply)                
+                            data_tmp_ = self._multiply_data(data_[i_obs][:, w_frequency,  stokes_index[stokes]].rechunk((time_[i_obs].chunks[0])), rfi_mask_to_apply)                
                     
                     
                                                 

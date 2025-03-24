@@ -91,11 +91,11 @@ python3 script.py -key_project <project_number> -target <target_name>
 python script.py -key_project 07 -target Jupiter --save_as_hdf5
 ```
 
-### Process data from KP O7 observations of Jupiter and apply RFI Mask level 2 and save results
+### Process data from KP 07 observations of Jupiter and apply RFI Mask level 2 and save results
 ```bash
 python script.py -key_project 07 -target Jupiter --apply_rfi_mask --rfi_mask_level 2 --save_as_hdf5
 ```
-### Process data from KP O7 observations of Jupiter and apply RFI Mask level 2 and calculate Lomb Scargle Periodogram
+### Process data from KP 07 observations of Jupiter and apply RFI Mask level 2 and calculate Lomb Scargle Periodogram
 ```bash
 python script.py -key_project 07 -target Jupiter --apply_rfi_mask --rfi_mask_level 2 --lombscargle_calculation --save_as_hdf5
 ```
@@ -111,7 +111,7 @@ The `normal_distribution_study.ipynb` Jupyter Notebook allows to understand how 
 
 This Jupyter notebook allows to reproduce the Figures of Section 2 the Louis et al. paper (2025) "Detection method for periodic radio emissions from an exoplanet's magnetosphere or a star--planet interaction" publication
 
-### Example with real NenuFAR data from KP O7 observations of Jupiter
+### Example with real NenuFAR data from KP 07 observations of Jupiter
 
 First, the NenuFAR KP07 data were processed using the following command
 ```bash
