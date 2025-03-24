@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "A Pipeline to process NenuFAR beamformed data and calculate Lomb-Scargle Periodograms"
+authors:
+  - family-names: "Louis"
+    given-names: "Corentin K."
+    orcid: "0000-0002-9552-8822"
+    affiliation: "https://ror.org/02eptjh02, https://ror.org/01vqrde47"
+  - family-names: "Loh"
+    given-names: "Alan"
+    orcid: "0000-0002-4698-9542"
+    affiliation: "https://ror.org/02eptjh02, https://ror.org/01vqrde47"
+  - family-names: "Zarka"
+    given-names: "Philippe"
+    orcid: "0000-0003-1672-9878"
+    affiliation: "https://ror.org/02eptjh02, https://ror.org/01vqrde47"
+  - family-names: "Mauduit"
+    given-names: "Emilie"
+    orcid: "0000-0001-5294-2890"
+    affiliation: "https://ror.org/02eptjh02, https://ror.org/01vqrde47"
+  - family-name: "Girard"
+    given-names: "Julien N."
+    orcid: "0000-0003-0432-403X"
+    affiliation: "https://ror.org/02eptjh02, https://ror.org/01vqrde47"
+license: "MIT"
+version: 1.0.0
+doi: 10.5281/zenodo.15065694
+date-released: 2025-03-21
+url: "https://github.com/CorentinLouis/NenuFAR_pipeline_beamformed_data/"
+abstract: |
+  This pipeline processes and analyses the NenuFAR radio beamformed data of a given possible radio emitter (such as a planet, exoplanet, or star). It allows various processing steps (including RFI masking, interpolation in time and frequency) and analyzing methods (Lomb-Scargle Periodogram calculation, periodicity stacking).
+keywords:
+  - "Radio Emissions"
+  - "Radioastronomy"
+  - "Data Processing"
+  - "Data Analysis"
+  - "Simulations"
+funding:
+  - "ERC under the European Union’s Horizon 2020 research and innovation program (grant agreement No. 101020459—Exoradio)"
+
+
