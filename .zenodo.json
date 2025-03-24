@@ -56,7 +56,7 @@
         {
             "scheme": "url",
             "identifier": "https://github.com/CorentinLouis/NenuFAR_pipeline_beamformed_data/",
-            "relation": "isSupplementedBy",
+            "relation": "isSupplementTo",
             "resource_type": "software"
         }
     ],
