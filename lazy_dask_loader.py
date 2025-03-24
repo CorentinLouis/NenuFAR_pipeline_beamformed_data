@@ -1,4 +1,5 @@
 import numpy
+import dask
 from dask import delayed
 import dask.array as da
 from astropy.io import fits
@@ -572,21 +573,8 @@ class LazyFITSLoader:
 
             if len(w_frequency) != 0:
                 if self.apply_rfi_mask == True:
-                    #with dask.config.set(**{'array.slicing.split_large_chunks': True}):
-                    rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency].rechunk((time_[i_obs].chunks[0]))
-
-
-            #2024-03-18 18:02:16 | INFO: Starting 77 / 154 observation
-            #/data/clouis/LT02/NenuFAR_pipeline_beamformed_data/lazy_dask_loader.py:362: PerformanceWarning: Slicing is producing a large chunk. To accept the large
-            #chunk and silence this warning, set the option
-            #    >>> with dask.config.set(**{'array.slicing.split_large_chunks': False}):
-            #    ...     array[indexer]
-            #
-            #To avoid creating the large chunks, set the option
-            #    >>> with dask.config.set(**{'array.slicing.split_large_chunks': True}):
-            #    ...     array[indexer]
-            #  rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
-            #2024-03-18 18:02:21 | INFO: Ending 77 / 154 observation
+                    with dask.config.set(**{'array.slicing.split_large_chunks': True}):
+                        rfi_mask_to_apply = rfi_mask_[i_obs][:, w_frequency]
 
                     if self.rfi_mask_level == 0:
                         rfi_mask_to_apply[rfi_mask_to_apply >= self.rfi_mask_level0_percentage/100] = 1
@@ -609,8 +597,8 @@ class LazyFITSLoader:
                                                         dtype=float   
                                                         )
                         else:
-                            data_tmp_ = self._multiply_data(self.safe_divide(data_[i_obs][:, w_frequency,  stokes_index['V']].rechunk((time_[i_obs].chunks[0])),
-                                                                            data_[i_obs][:, w_frequency,  stokes_index['I']].rechunk((time_[i_obs].chunks[0]))),
+                            data_tmp_ = self._multiply_data(self.safe_divide(data_[i_obs][:, w_frequency,  stokes_index['V']],
+                                                                            data_[i_obs][:, w_frequency,  stokes_index['I']]),
                                                             rfi_mask_to_apply)       
                     elif stokes == 'L':
                         if data_[i_obs].shape[2] == 4:
@@ -631,7 +619,7 @@ class LazyFITSLoader:
                                                         dtype=float   
                                                         )
                         else:
-                            data_tmp_ = self._multiply_data(data_stokes_L.rechunk((time_[i_obs].chunks[0])), rfi_mask_to_apply)
+                            data_tmp_ = self._multiply_data(data_stokes_L, rfi_mask_to_apply)
 
                     else: # elif stokes != 'L' & != VI:
                         if self.interpolation_in_time:
@@ -648,7 +636,7 @@ class LazyFITSLoader:
                                                         dtype=float   
                                                         )
                         else:
-                            data_tmp_ = self._multiply_data(data_[i_obs][:, w_frequency,  stokes_index[stokes]].rechunk((time_[i_obs].chunks[0])), rfi_mask_to_apply)                
+                            data_tmp_ = self._multiply_data(data_[i_obs][:, w_frequency,  stokes_index[stokes]], rfi_mask_to_apply)                
                     
                     
                                                 
@@ -708,8 +696,8 @@ class LazyFITSLoader:
                                                         )
                                     
                         else:
-                            data_tmp_ = self.safe_divide(data_[i_obs][:, index_frequency, stokes_index['V']].rechunk((time_[i_obs].chunks[0])), 
-                                                         data_[i_obs][:, index_frequency, stokes_index['I']].rechunk((time_[i_obs].chunks[0])))
+                            data_tmp_ = self.safe_divide(data_[i_obs][:, w_frequency, stokes_index['V']], 
+                                                         data_[i_obs][:, w_frequency, stokes_index['I']])
 
                                                                     
                     else: # elif stokes != 'L' & != 'RM' & != 'VI':
