@@ -940,8 +940,8 @@ class LazyFITSLoader:
         
         if type_LS.lower() == 'scipy':
             power_LS = LombScargle_scipy(time, data, f_LS, normalize=normalized_LS)
-        if type_LS.lower() == 'astroml':
-            power_LS = LombScargle_astroML(time, data, f_LS)
+        #if type_LS.lower() == 'astroml':
+        #    power_LS = LombScargle_astroML(time, data, f_LS)
         if type_LS.lower() == 'astropy':
             #time in jd Time(data)
             if normalized_LS:
