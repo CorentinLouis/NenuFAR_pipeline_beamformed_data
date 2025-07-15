@@ -21,12 +21,18 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Convert the 0-1 range into a value in the right range.
     return rightMin + (valueScaled * rightSpan)
 
-def calculate_LS_periodogram(time, signal, exoplanet_period_in_hours, ls_object = False):
+def calculate_LS_periodogram(time, signal, exoplanet_period_in_hours, T1 = None, T2 = None, ls_object = False):
 
     nout=100000
     T_exoplanet = numpy.mean(exoplanet_period_in_hours)*60*60 # T needs to be in seconds #numpy.mean() is taken, in case T_exoplanet is a list
-    T1 = T_exoplanet/10     # Period min
-    T2 = T_exoplanet*10     # Period max
+    if T1 == None:
+        T1 = T_exoplanet/10     # Period min
+    else:
+        T1 = T1*60*60
+    if T2 == None:
+        T2 = T_exoplanet*10     # Period max
+    else:
+        T2 = T2*60*60
     w1 = 2*numpy.pi/T1      # Pulsation max
     w2 = 2*numpy.pi/T2      # Pulsation min
     #f_LS = numpy.logspace(numpy.log10(w2), numpy.log10(w1), nout)  / (2 * numpy.pi) #Frequencies at which to search for periodicity with LombScargle
@@ -51,7 +57,7 @@ def calculate_LS_periodogram(time, signal, exoplanet_period_in_hours, ls_object 
         return frequency_LS, power_LS
 
 
-def randomization_test(t_observed, y_observed, Period_exoplanet, n_iterations = 100):
+def randomization_test(t_observed, y_observed, Period_exoplanet, n_iterations = 100, T1 = None, T2 = None):
     max_powers_randomized = []
 
     frequency_LS, power_LS = calculate_LS_periodogram(t_observed, y_observed, Period_exoplanet)
@@ -61,7 +67,7 @@ def randomization_test(t_observed, y_observed, Period_exoplanet, n_iterations = 
         y_randomized = numpy.random.permutation(y_observed)
 
         # Compute the LS periodogram with shuffled data
-        frequency_LS_randomized, power_LS_randomized = calculate_LS_periodogram(t_observed, y_randomized, Period_exoplanet)
+        frequency_LS_randomized, power_LS_randomized = calculate_LS_periodogram(t_observed, y_randomized, Period_exoplanet, T1 = T1, T2 = T2)
 
         # Store the maximum power of the shuffled data
         max_powers_randomized.append(numpy.max(power_LS_randomized))
@@ -75,8 +81,8 @@ def randomization_test(t_observed, y_observed, Period_exoplanet, n_iterations = 
 
     return(frequency_LS, power_LS, conf_levels)
 
-def randomization_test_using_LS_package(t_observed, y_observed, Period_exoplanet, method = 'baluev'):
-    (ls_object, frequency_LS, power_LS) = calculate_LS_periodogram(t_observed, y_observed, Period_exoplanet, ls_object = True)
+def randomization_test_using_LS_package(t_observed, y_observed, Period_exoplanet, method = 'baluev', T1 = None, T2 = None):
+    (ls_object, frequency_LS, power_LS) = calculate_LS_periodogram(t_observed, y_observed, Period_exoplanet, ls_object = True, T1 = T1, T2 = T2)
         
     # method : 'baluev', 'davies', 'naive', 'bootstrap'
     
@@ -101,7 +107,7 @@ def randomization_test_using_LS_package(t_observed, y_observed, Period_exoplanet
     return(frequency_LS, power_LS, fap_levels, false_alarm_levels)
 
 
-def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main_title, real_data = False, x_zoomin = None, y_zoomin = None, add_p_values = None, add_extra_T = None, log_x_scale = False, log_y_scale = False, savefig = False, filename_savedfile = 'LS_plot.pdf', T_title = None, y_T_arrow = None):
+def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main_title, real_data = False, x_zoomin = None, y_zoomin = None, add_p_values = None, add_extra_T = None, log_x_scale = False, log_y_scale = False, savefig = False, filename_savedfile = 'LS_plot.pdf', T_title = None, y_T_arrow = None, T1 = None, T2 = None):
     # x_zoomin and y_zoomin: either None, or [min, max]
     # add_extra_T needs to be a dictionnary like: {T_value: float, T_name: string}/
     #     e.g., add_extra_T = {
@@ -111,13 +117,13 @@ def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main
 
     if add_p_values != None:
         if add_p_values.lower() == 'p-test':
-            (frequency_LS, power_LS, confidence_level) = randomization_test(t_observed, y_observed, Period_exoplanet)
+            (frequency_LS, power_LS, confidence_level) = randomization_test(t_observed, y_observed, Period_exoplanet, T1 = T1, T2 = T2)
             confidence_level_labels = numpy.array([50, 90, 95, 99, 99.9])
         if add_p_values.lower() == 'from_ls':
-            (frequency_LS, power_LS, fap_levels, confidence_level) = randomization_test_using_LS_package(t_observed, y_observed, Period_exoplanet, method = 'baluev')
+            (frequency_LS, power_LS, fap_levels, confidence_level) = randomization_test_using_LS_package(t_observed, y_observed, Period_exoplanet, method = 'baluev', T1 = T1, T2 = T2)
             confidence_level_labels = numpy.array([99.9, 99, 95, 90, 50])
     else:
-        (frequency_LS, power_LS) = calculate_LS_periodogram(t_observed, y_observed, Period_exoplanet)
+        (frequency_LS, power_LS) = calculate_LS_periodogram(t_observed, y_observed, Period_exoplanet, T1 = T1, T2 = T2)
 
     
     T_Synodic_Io = 0.5394862621777665 * 24 * 3600
@@ -149,8 +155,15 @@ def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main
             y_min = 0
             y_max = 1
     ax.set_ylim(y_min,y_max)
-    ax.xaxis.set_major_locator(MultipleLocator(5))
-    ax.xaxis.set_minor_locator(MultipleLocator(1))
+    
+    if (x_max - x_min) <= 48:
+        major_loc = 5
+        minor_loc = 1
+    elif (x_max - x_min) > 48:
+        major_loc = 24
+        minor_loc = 6
+    ax.xaxis.set_major_locator(MultipleLocator(major_loc))
+    ax.xaxis.set_minor_locator(MultipleLocator(minor_loc))
 
     ax.set_xlabel("Period (hours)")
     ax.set_ylabel("LS Power")
@@ -347,6 +360,73 @@ def calculate_and_plot_LS_distrib_ON_minus_OFF(t_observed_ON, y_observed_ON, t_o
     #            ha='center', va='bottom',
     #            color="orange")
 
+
+def calculate_LS_and_plot_2D_SNR(time_timestamp, frequencies, data, 
+                        target = '', # target name
+                        target_type = 'exoplanet', # exoplanet or star
+                        T_search = 1.22, # Expected periodicity in days (LS will look for periodicity x/ 10 this value)
+                        extra_title='',
+                        x_zoomin = None, y_zoomin = None,
+                        log_x_scale = False,
+                        y_zoomin_2D_periodogram = None,
+                        vmin = None, vmax = None,
+                        cmap = 'inferno',
+                        y_T_arrow = None,
+                        T_title = None,
+                        add_extra_T = None,
+                        savefig = False,
+                        vline = False,
+                        color_vline = None,
+                        filename = 'LS_periodograms.pdf',
+                        stokes = 'VI',
+                        add_p_values = None,
+                        SNR_limit = None):
+ 
+    for i_freq, freq in enumerate(frequencies):
+        #time = datetime_to_timestamp(time_datetime)
+        time = time_timestamp#datetime_to_timestamp(time_datetime)
+        data_ = data[:, frequencies==freq][:,0]
+        if stokes == 'VI':
+            data_[numpy.abs(data_) > 1] = numpy.nan # unphysical points
+        data_[numpy.isnan(data_)] = 0
+        data_[numpy.isinf(data_)] = 0
+
+        print(f'data: {data_.min()}, {data_.max()}')
+        title = f"Lomb Scargle (LS) Periodogram, f = {freq}"+'\n'+f'{extra_title}'
+        if T_title == None:
+            T_title = f'{target}'
+
+
+        if add_p_values != None:
+            if add_p_values.lower() == 'p-test':
+                (frequency_LS, power_LS, confidence_level) = randomization_test(time, data_, T_search*24)
+                confidence_level_labels = numpy.array([50, 90, 95, 99, 99.9])
+            if add_p_values.lower() == 'from_ls':
+                (frequency_LS, power_LS, fap_levels, confidence_level) = randomization_test_using_LS_package(time, data_, T_search*24, method = 'baluev')
+                confidence_level_labels = numpy.array([99.9, 99, 95, 90, 50])
+        else:
+            (frequency_LS, power_LS) = calculate_LS_periodogram(time, data_, T_search*24)
+
+
+        if i_freq == 0:
+            power_LS_full = numpy.zeros((frequencies.shape[0], frequency_LS.shape[0]))
+        power_LS_full[i_freq, : ] = power_LS
+    
+    power_LS_full[numpy.isnan(power_LS_full)] = 0
+    power_LS_full[numpy.isinf(power_LS_full)] = 0
+    print(f'power_LS: {power_LS_full.min()}, {power_LS_full.max()}')
+    #plot_LS_2D_periodogram(frequency_LS, frequencies, power_LS_full,
+    plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_full,
+                        x_zoomin = x_zoomin,
+                        y_zoomin = y_zoomin_2D_periodogram,
+                        log_x_scale = log_x_scale,
+                        vline = vline,
+                        color_vline = color_vline,
+                        T_search = T_search, T_name = T_title, add_extra_T = add_extra_T,
+                        vmin = vmin, vmax = vmax, cmap = cmap, savefig = savefig, filename = filename, SNR_limit = SNR_limit)
+
+    return(frequency_LS, frequencies, power_LS_full)
+
 def plot_LS_1D_and_2D(time_timestamp, frequencies, data, 
                         target = '', # target name
                         target_type = 'exoplanet', # exoplanet or star
@@ -407,7 +487,9 @@ def read_data_and_plot_LS(path_to_data = './',
                           stokes = 'VI',
                           target = '', # target name
                           target_type = 'exoplanet', # exoplanet or star
-                          T_search = 1.22, # Expected periodicity in days (LS will look for periodicity x/ 10 this value)
+                          T_search = 1.22, # Expected periodicity in days (LS will look for periodicity x/ 10 this value). Except if T1 and T2 are given
+                          T1 = None, # min LS periodicity to look for
+                          T2 = None, # max LS periodicity to look for
                           extra_title='',
                           beam_on = True, beam_off = False,
                           beam_off_number = '', # empty string or number (int or string format)
@@ -429,6 +511,10 @@ def read_data_and_plot_LS(path_to_data = './',
     main_filename = file_name.split('.')[0]
     main_filename_no_beam_name = main_filename.split('_O')[0]
 
+    if T1 != None:
+        T1 = T1*24
+    if T2 != None:
+        T2 = T2*24
     if beam_on:
         file_NenuFAR_observations_beam_ON = f'{main_filename_no_beam_name}_ON.{ext}'
         (time_datetime_beam_ON,
@@ -475,16 +561,24 @@ def read_data_and_plot_LS(path_to_data = './',
             data_for_LS_beam_ON = data_final_beam_ON[:, frequencies_beam_ON==freq][:,0]
             if stokes == 'VI':
                 data_for_LS_beam_ON[numpy.abs(data_for_LS_beam_ON) > 1] = numpy.nan # unphysical points
-            if stokes == 'I':
+            else:
                 data_for_LS_beam_ON[data_for_LS_beam_ON > 1e15] = numpy.nan # unphysical points
                 data_for_LS_beam_ON[data_for_LS_beam_ON < 1] = numpy.nan # unphysical points
+                data_for_LS_beam_ON = 20 * numpy.log10(data_for_LS_beam_ON)
             data_for_LS_beam_ON[numpy.isnan(data_for_LS_beam_ON)] = 0
             data_for_LS_beam_ON[numpy.isinf(data_for_LS_beam_ON)] = 0
+
 
         if beam_off:
             time_real_beam_OFF = datetime_to_timestamp(time_datetime_beam_OFF)
             data_for_LS_beam_OFF = data_final_beam_OFF[:, frequencies_beam_OFF==freq][:,0]
-            data_for_LS_beam_OFF[numpy.abs(data_for_LS_beam_OFF) > 1] = numpy.nan # unphysical points
+            if stokes == 'VI':
+                data_for_LS_beam_OFF[numpy.abs(data_for_LS_beam_OFF) > 1] = numpy.nan # unphysical points
+            else:
+                data_for_LS_beam_OFF[data_for_LS_beam_OFF > 1e15] = numpy.nan # unphysical points
+                data_for_LS_beam_OFF[data_for_LS_beam_OFF < 1] = numpy.nan # unphysical points
+                data_for_LS_beam_OFF = 20 * numpy.log10(data_for_LS_beam_OFF)
+                
             data_for_LS_beam_OFF[numpy.isnan(data_for_LS_beam_OFF)] = 0
             data_for_LS_beam_OFF[numpy.isinf(data_for_LS_beam_OFF)] = 0
 
@@ -498,14 +592,14 @@ def read_data_and_plot_LS(path_to_data = './',
                 (frequency_LS, power_LS) = calculate_and_plot_LS_distrib_ON_minus_OFF(time_real_beam_ON, data_for_LS_beam_ON, time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin =y_zoomin, y_T_arrow = 0.010, add_extra_T = add_extra_T, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf')
         elif beam_on ==True and beam_off == False:
             if add_p_values:
-                (frequency_LS, power_LS, confidence_level) = calculate_and_plot_LS_distrib(time_real_beam_ON, data_for_LS_beam_ON, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T=add_extra_T, add_p_values=add_p_values, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf')
+                (frequency_LS, power_LS, confidence_level) = calculate_and_plot_LS_distrib(time_real_beam_ON, data_for_LS_beam_ON, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T=add_extra_T, add_p_values=add_p_values, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
             else:
-                (frequency_LS, power_LS) = calculate_and_plot_LS_distrib(time_real_beam_ON, data_for_LS_beam_ON, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T=add_extra_T, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf')
+                (frequency_LS, power_LS) = calculate_and_plot_LS_distrib(time_real_beam_ON, data_for_LS_beam_ON, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T=add_extra_T, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
         elif beam_on ==False and beam_off == True:
             if add_p_values:
-                (frequency_LS, power_LS, confidence_level) = calculate_and_plot_LS_distrib(time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T = add_extra_T, add_p_values=add_p_values, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf')
+                (frequency_LS, power_LS, confidence_level) = calculate_and_plot_LS_distrib(time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T = add_extra_T, add_p_values=add_p_values, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
             else:
-                (frequency_LS, power_LS) = calculate_and_plot_LS_distrib(time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T = add_extra_T, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf')
+                (frequency_LS, power_LS) = calculate_and_plot_LS_distrib(time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T = add_extra_T, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
 
         if i_freq == 0:
             power_LS_full = numpy.zeros((frequencies.shape[0], frequency_LS.shape[0]))
@@ -779,7 +873,7 @@ def read_and_plot_timeseries(path_to_data = './',
             data_for_LS_beam_OFF[numpy.isnan(data_for_LS_beam_OFF)] = 0
             data_for_LS_beam_OFF[numpy.isinf(data_for_LS_beam_OFF)] = 0
 
-            ax.scatter(time_datetime_beam_OFF, data_for_LS_beam_OFF, s=10, label=f'{i_freq:.4f} kHz', alpha=0.5)
+            ax.scatter(time_datetime_beam_OFF, data_for_LS_beam_OFF, s=10, label=f'{int(i_freq)} MHz', alpha=0.5)
             
             if beam_on == False:    
                 ax.legend(
@@ -1322,7 +1416,7 @@ def calculate_and_plot_SNR_LS_periodogram_over_time(time_datetime_beam_ON, frequ
         plt.savefig(filename, transparent=True)
     else:
         plt.show()
-
+        return(times_results, frequency_LS, power_results,SNR_LS_results)
     plt.close()
 
 def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
@@ -1332,14 +1426,18 @@ def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
                             cmap = 'inferno',
                             vline = False,
                             color_vline = None,
-                            savefig = False, filename = 'SNR_LS_2D_periodogram.pdf'):
+                            savefig = False, filename = 'SNR_LS_2D_periodogram.pdf',
+                            SNR_limit = None):
 
     SNR_LS_2D = numpy.zeros(power_LS_2D.shape)
     for i_freq, freq in enumerate(frequencies):
         SNR_tmp =  numpy.nanstd(power_LS_2D[i_freq,:]) 
         if SNR_tmp != 0:
             SNR_LS_2D[i_freq,:] = power_LS_2D[i_freq,:]/SNR_tmp
-
+            if SNR_limit !=None:
+                if numpy.median(SNR_LS_2D[i_freq,:]) >= SNR_limit:
+                    SNR_LS_2D[i_freq,:] = 0
+            
     fig, ax = plt.subplots(figsize=(10, 6))
 
     if vmin==None:
@@ -1355,16 +1453,34 @@ def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
                 levels=numpy.linspace(vmin,vmax,20),
                 extend='max', vmin=vmin, vmax=vmax,
                 zorder = 1)
-    plt.colorbar(im, ax=ax, label='SNR')
+    plt.colorbar(im, ax=ax, label='SNR (LS)')
 
-    ax.xaxis.set_major_locator(MultipleLocator(5))
-    ax.xaxis.set_minor_locator(MultipleLocator(1))
+
+    if x_zoomin == None:
+        x_min = numpy.min(1/frequency_LS/60/60)
+        x_max = numpy.max(1/frequency_LS/60/60)
+    else:
+        x_min = x_zoomin[0]
+        x_max = x_zoomin[1]
+    
+    if (x_max - x_min > 2) & (x_max - x_min <= 48):
+        major_loc_x = 5
+        minor_loc_x = 1
+    elif (x_max - x_min) <= 2:
+        major_loc_x = 0.5
+        minor_loc_x = 0.08333333333333333
+    else:
+        major_loc_x = 24
+        minor_loc_x = 6
+
+    ax.xaxis.set_major_locator(MultipleLocator(major_loc_x))
+    ax.xaxis.set_minor_locator(MultipleLocator(minor_loc_x))
     ax.yaxis.set_major_locator(MultipleLocator(5))
     ax.yaxis.set_minor_locator(MultipleLocator(1))
-    if x_zoomin == None:
-        ax.set_xlim(numpy.min(1/frequency_LS/60/60), numpy.max(1/frequency_LS/60/60))
-    else:
-        ax.set_xlim(x_zoomin)
+
+
+    ax.set_xlim(x_min,x_max)
+    
     if y_zoomin == None:
         ax.set_ylim(numpy.min(frequencies), numpy.max(frequencies))
     else:
