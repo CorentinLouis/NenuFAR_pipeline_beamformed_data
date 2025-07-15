@@ -378,7 +378,7 @@ if __name__ == '__main__':
     parser.add_argument('--remove_background_to_LS', dest = 'background', default = False, action='store_true', help="Set True to remove a background to the Lomb Scargle plots (per LS frequency)")
     parser.add_argument('--save_as_hdf5', dest = 'save_as_hdf5', default = False, action = 'store_true', help = "To save results in an hdf5 file")
     parser.add_argument('--plot_results', dest = 'plot_results', default = False, action = 'store_true', help = "To plot and save results")
-    parser.add_argument("--figsize", dest = 'figsize', nargs = 2, type = int, default = None, help = "Figure size")
+    parser.add_argument('--figsize', dest = 'figsize', nargs = 2, type = int, default = None, help = "Figure size")
     parser.add_argument('--plot_x_lim', dest = 'plot_x_lim', default = None, nargs = 2, type = float, help = "x limits for Lomb-Scargle periodogram plot")
 
     parser.add_argument('--plot_only', dest = 'plot_only', default = False, action = 'store_true', help = "Set this as True if you only want to plot the results from pre-calculated data stored in an hdf5 file")
