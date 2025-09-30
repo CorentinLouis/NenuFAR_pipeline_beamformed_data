@@ -1,6 +1,6 @@
 import numpy
 from astropy.timeseries import LombScargle as LombScargle_astropy
-from lomb_scargle_calculation import read_hdf5_file, datetime_to_timestamp, timestamp_to_datetime
+from processing_data import read_hdf5_file, datetime_to_timestamp, timestamp_to_datetime
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator, MultipleLocator
