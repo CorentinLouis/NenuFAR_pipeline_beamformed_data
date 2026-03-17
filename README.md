@@ -115,6 +115,6 @@ This Jupyter notebook allows to reproduce the Figures of Section 2 the Louis et 
 
 First, the NenuFAR KP07 data were processed using the following command
 ```bash
-python3 lomb_scargle_calculation.py -key_project 07 -target Jupiter --stokes VI --main_directory_path './data/' --apply_rfi_mask --rfi_mask_level 0  --rfi_mask_level0_percentage 50 --interpolation_in_time --interpolation_in_time_value 600 --interpolation_in_frequency --interpolation_in_frequency_value 1 --save_as_hdf5 --output_directory './outputs/' --frequency_interval 8 90 --log_infos
+python3 processing_data.py -key_project 07 -target Jupiter --stokes VI --main_directory_path './data/' --apply_rfi_mask --rfi_mask_level 0  --rfi_mask_level0_percentage 50 --interpolation_in_time --interpolation_in_time_value 600 --interpolation_in_frequency --interpolation_in_frequency_value 1 --save_as_hdf5 --output_directory './outputs/' --frequency_interval 8 90 --log_infos
 ```
 Once the processed file has been created (accessible upon request to corentin.louis@obspm.fr), the specific lomb-scargle periodograms displayed in Louis et al. (2025) can be calculated using the `Louis_2025_LS_Jupiter.ipynb` Jupyter Notebook.
