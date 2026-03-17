@@ -9,7 +9,7 @@ import matplotlib.colors as mcolors
 
 import datetime
 
-from lomb_scargle_calculation import read_hdf5_file, datetime_to_timestamp, timestamp_to_datetime
+from processing_data import read_hdf5_file, datetime_to_timestamp, timestamp_to_datetime
 
 def doy_specific_year_to_yyyyddd(doy, origin):  
 ### Function to change "day of a specific year" format to yyyyddd ###
@@ -52,10 +52,10 @@ def datetime_to_timestamp_old(datetime_table):
 
 
 
-def restore_cat(yyyy_min, yyyy_max, duration_min, intensity_min, fmax_min, fmax_max):
+def restore_cat(yyyy_min, yyyy_max, duration_min, intensity_min, fmax_min, fmax_max,
+                catalog_path = "/Users/clouis/Documents/Data/NDA/catalogue/new_catalog_.sav"):
     # Load the .sav file
-    filename_catalogue_NDA = "/Users/clouis/Documents/Data/NDA/catalogue/new_catalog_.sav"
-    catalog = readsav(filename_catalogue_NDA)
+    catalog = readsav(catalog_path)
     
     emg = catalog['emg']
     emeph = catalog['emeph']
