@@ -21,23 +21,26 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Convert the 0-1 range into a value in the right range.
     return rightMin + (valueScaled * rightSpan)
 
-def calculate_LS_periodogram(time, signal, exoplanet_period_in_hours, T1 = None, T2 = None, ls_object = False):
+def calculate_LS_periodogram(time, signal, exoplanet_period_in_hours, T1 = None, T2 = None, ls_object = False, nout=100000, T_lin = False):
 
-    nout=100000
+    
     T_exoplanet = numpy.mean(exoplanet_period_in_hours)*60*60 # T needs to be in seconds #numpy.mean() is taken, in case T_exoplanet is a list
     if T1 == None:
         T1 = T_exoplanet/10     # Period min
     else:
-        T1 = T1*60*60
+        T1 = T1*60*60 # T1 from hours --> sec
     if T2 == None:
         T2 = T_exoplanet*10     # Period max
     else:
-        T2 = T2*60*60
+        T2 = T2*60*60 # T2 from hours --> sec
     w1 = 2*numpy.pi/T1      # Pulsation max
     w2 = 2*numpy.pi/T2      # Pulsation min
     #f_LS = numpy.logspace(numpy.log10(w2), numpy.log10(w1), nout)  / (2 * numpy.pi) #Frequencies at which to search for periodicity with LombScargle
-    f_LS = numpy.linspace(w2, w1, nout)  / (2 * numpy.pi) #Frequencies at which to search for periodicity with LombScargle
-
+    if T_lin == False:
+        f_LS = numpy.linspace(w2, w1, nout)  / (2 * numpy.pi) #Frequencies at which to search for periodicity with LombScargle
+    else:
+        T_LS = numpy.linspace(T2, T1, nout)
+        f_LS = 1/T_LS
 
     normalization='standard'
     method = 'auto'
@@ -107,7 +110,7 @@ def randomization_test_using_LS_package(t_observed, y_observed, Period_exoplanet
     return(frequency_LS, power_LS, fap_levels, false_alarm_levels)
 
 
-def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main_title, real_data = False, x_zoomin = None, y_zoomin = None, add_p_values = None, add_extra_T = None, log_x_scale = False, log_y_scale = False, savefig = False, filename_savedfile = 'LS_plot.pdf', T_title = None, y_T_arrow = None, T1 = None, T2 = None):
+def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main_title, real_data = False, x_zoomin = None, y_zoomin = None, add_p_values = None, method_p_test = 'bootstrap', add_extra_T = None, log_x_scale = False, log_y_scale = False, savefig = False, filename_savedfile = 'LS_plot.pdf', T_title = None, y_T_arrow = None, T1 = None, T2 = None, fontsize = 14):
     # x_zoomin and y_zoomin: either None, or [min, max]
     # add_extra_T needs to be a dictionnary like: {T_value: float, T_name: string}/
     #     e.g., add_extra_T = {
@@ -120,7 +123,7 @@ def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main
             (frequency_LS, power_LS, confidence_level) = randomization_test(t_observed, y_observed, Period_exoplanet, T1 = T1, T2 = T2)
             confidence_level_labels = numpy.array([50, 90, 95, 99, 99.9])
         if add_p_values.lower() == 'from_ls':
-            (frequency_LS, power_LS, fap_levels, confidence_level) = randomization_test_using_LS_package(t_observed, y_observed, Period_exoplanet, method = 'baluev', T1 = T1, T2 = T2)
+            (frequency_LS, power_LS, fap_levels, confidence_level) = randomization_test_using_LS_package(t_observed, y_observed, Period_exoplanet, method = method_p_test, T1 = T1, T2 = T2)
             confidence_level_labels = numpy.array([99.9, 99, 95, 90, 50])
     else:
         (frequency_LS, power_LS) = calculate_LS_periodogram(t_observed, y_observed, Period_exoplanet, T1 = T1, T2 = T2)
@@ -165,9 +168,10 @@ def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main
     ax.xaxis.set_major_locator(MultipleLocator(major_loc))
     ax.xaxis.set_minor_locator(MultipleLocator(minor_loc))
 
-    ax.set_xlabel("Period (hours)")
-    ax.set_ylabel("LS Power")
-    ax.set_title(main_title)
+    ax.set_xlabel("Period (hours)", fontsize=fontsize)
+    ax.set_ylabel("LS Power", fontsize=fontsize)
+    ax.set_title(main_title, fontsize=fontsize+2)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize)
 
     #ax.annotate("", xy=(T_Jupiter/60/60, 1.1*numpy.max(power_LS)), xytext=(T_Jupiter/60/60, 1.25*numpy.max(power_LS)),
     #            arrowprops=dict(arrowstyle="->", color="darkgreen"))
@@ -184,10 +188,10 @@ def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main
         y_T_arrow = numpy.max(power_LS)
 
     ax.annotate("", xy=(Period_exoplanet, 1.1*y_T_arrow), xytext=(Period_exoplanet, 1.4*y_T_arrow),
-                arrowprops=dict(arrowstyle="->", color="dodgerblue"))
+                arrowprops=dict(arrowstyle="->", color="dodgerblue"), fontsize = fontsize-2)
     ax.annotate(T_title, xy=(Period_exoplanet, 1.4*y_T_arrow),
                 ha='left', va='bottom',
-                color="dodgerblue")
+                color="dodgerblue", fontsize = fontsize-2)
 
     if add_extra_T != None:
         ind_extra_T = 0
@@ -196,12 +200,13 @@ def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main
             ax.annotate("",
                  xy=(value['T_value'], 1.1*y_T_arrow),
                  xytext=(value['T_value'], (1.4+ind_extra_T*0.1)*y_T_arrow),
-                 arrowprops=dict(arrowstyle="->", color="dodgerblue"))
+                 arrowprops=dict(arrowstyle="->", color="dodgerblue"),
+                 fontsize = fontsize-2)
             T_title = f"{value['T_name']}"
             ax.annotate(T_title,
                  xy=(value['T_value'], (1.4+ind_extra_T*0.1)*y_T_arrow),
                  ha='left', va='bottom',
-                 color="dodgerblue")
+                 color="dodgerblue", fontsize = fontsize-2)
 
                  
     
@@ -214,7 +219,7 @@ def calculate_and_plot_LS_distrib(t_observed, y_observed, Period_exoplanet, main
         # Plot the confidence levels
         for i, conf_level in enumerate(confidence_level):
             ax.axhline(y=conf_level, color='C{}'.format(i+1), linestyle='--', label=f'{confidence_level_labels[i]}%')
-        ax.legend(title = "Confidence Level")
+        ax.legend(title = "Confidence Level", fontsize = fontsize)
         if savefig:
                 plt.savefig(filename_savedfile, format='pdf', transparent = True, dpi='figure')
         else:
@@ -370,6 +375,7 @@ def calculate_LS_and_plot_2D_SNR(time_timestamp, frequencies, data,
                         log_x_scale = False,
                         y_zoomin_2D_periodogram = None,
                         vmin = None, vmax = None,
+                        vmin_auto_percentile_value = None,
                         cmap = 'inferno',
                         y_T_arrow = None,
                         T_title = None,
@@ -380,7 +386,11 @@ def calculate_LS_and_plot_2D_SNR(time_timestamp, frequencies, data,
                         filename = 'LS_periodograms.pdf',
                         stokes = 'VI',
                         add_p_values = None,
-                        SNR_limit = None):
+                        SNR_limit = None,
+                        nout = 100000,
+                        T_lin = False,
+                        T1 = None,
+                        T2 = None):
  
     for i_freq, freq in enumerate(frequencies):
         #time = datetime_to_timestamp(time_datetime)
@@ -405,7 +415,7 @@ def calculate_LS_and_plot_2D_SNR(time_timestamp, frequencies, data,
                 (frequency_LS, power_LS, fap_levels, confidence_level) = randomization_test_using_LS_package(time, data_, T_search*24, method = 'baluev')
                 confidence_level_labels = numpy.array([99.9, 99, 95, 90, 50])
         else:
-            (frequency_LS, power_LS) = calculate_LS_periodogram(time, data_, T_search*24)
+            (frequency_LS, power_LS) = calculate_LS_periodogram(time, data_, T_search*24, T1 = T1, T2 = T2, nout = nout, T_lin = T_lin)
 
 
         if i_freq == 0:
@@ -423,7 +433,9 @@ def calculate_LS_and_plot_2D_SNR(time_timestamp, frequencies, data,
                         vline = vline,
                         color_vline = color_vline,
                         T_search = T_search, T_name = T_title, add_extra_T = add_extra_T,
-                        vmin = vmin, vmax = vmax, cmap = cmap, savefig = savefig, filename = filename, SNR_limit = SNR_limit)
+                        vmin = vmin, vmax = vmax,
+                        vmin_auto_percentile_value = vmin_auto_percentile_value,
+                        cmap = cmap, savefig = savefig, filename = filename, SNR_limit = SNR_limit)
 
     return(frequency_LS, frequencies, power_LS_full)
 
@@ -436,6 +448,7 @@ def plot_LS_1D_and_2D(time_timestamp, frequencies, data,
                         log_x_scale = False,
                         y_zoomin_2D_periodogram = None,
                         vmin = None, vmax = None,
+                        vmin_auto_percentile_value = None,
                         cmap = 'inferno',
                         y_T_arrow = None,
                         T_title = None,
@@ -478,7 +491,9 @@ def plot_LS_1D_and_2D(time_timestamp, frequencies, data,
                         vline = vline,
                         color_vline = color_vline,
                         T_search = T_search, T_name = T_title, add_extra_T = add_extra_T,
-                        vmin = vmin, vmax = vmax, cmap = cmap, savefig = savefig, filename = filename)
+                        vmin = vmin, vmax = vmax,
+                        vmin_auto_percentile_value = vmin_auto_percentile_value,
+                        cmap = cmap, savefig = savefig, filename = filename)
 
     return(frequency_LS, frequencies, power_LS_full)
 
@@ -497,6 +512,7 @@ def read_data_and_plot_LS(path_to_data = './',
                           log_x_scale = False,
                           y_zoomin_2D_periodogram = None,
                           vmin = None, vmax = None,
+                          vmin_auto_percentile_value = None,
                           cmap = 'inferno',
                           y_T_arrow = None,
                           T_title = None,
@@ -505,7 +521,8 @@ def read_data_and_plot_LS(path_to_data = './',
                           color_vline = None,
                           savefig = False,
                           filename = 'LS_periodograms.pdf',
-                          add_p_values = None):
+                          add_p_values = None,
+                          method_p_test = 'bootstrap'):
     
     ext = file_name.split('.')[-1]
     main_filename = file_name.split('.')[0]
@@ -592,18 +609,20 @@ def read_data_and_plot_LS(path_to_data = './',
                 (frequency_LS, power_LS) = calculate_and_plot_LS_distrib_ON_minus_OFF(time_real_beam_ON, data_for_LS_beam_ON, time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin =y_zoomin, y_T_arrow = 0.010, add_extra_T = add_extra_T, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf')
         elif beam_on ==True and beam_off == False:
             if add_p_values:
-                (frequency_LS, power_LS, confidence_level) = calculate_and_plot_LS_distrib(time_real_beam_ON, data_for_LS_beam_ON, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T=add_extra_T, add_p_values=add_p_values, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
+                (frequency_LS, power_LS, confidence_level) = calculate_and_plot_LS_distrib(time_real_beam_ON, data_for_LS_beam_ON, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T=add_extra_T, add_p_values=add_p_values,method_p_test = 'baluev', savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
             else:
                 (frequency_LS, power_LS) = calculate_and_plot_LS_distrib(time_real_beam_ON, data_for_LS_beam_ON, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T=add_extra_T, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
         elif beam_on ==False and beam_off == True:
             if add_p_values:
-                (frequency_LS, power_LS, confidence_level) = calculate_and_plot_LS_distrib(time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T = add_extra_T, add_p_values=add_p_values, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
+                (frequency_LS, power_LS, confidence_level) = calculate_and_plot_LS_distrib(time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T = add_extra_T, add_p_values=add_p_values, method_p_test = method_p_test, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
             else:
                 (frequency_LS, power_LS) = calculate_and_plot_LS_distrib(time_real_beam_OFF, data_for_LS_beam_OFF, T_search*24, title, real_data = True, log_x_scale=log_x_scale, T_title = T_title, x_zoomin=x_zoomin, y_zoomin = y_zoomin, y_T_arrow = y_T_arrow, add_extra_T = add_extra_T, savefig = savefig, filename_savedfile = f'LS_freq_{freq}.pdf', T1 = T1, T2 = T2)
 
         if i_freq == 0:
             power_LS_full = numpy.zeros((frequencies.shape[0], frequency_LS.shape[0]))
+            confidence_level_full = numpy.zeros((frequencies.shape[0], 5))
         power_LS_full[i_freq, : ] = power_LS
+        confidence_level_full[i_freq, : ] = confidence_level
         
     
     #plot_LS_2D_periodogram(frequency_LS, frequencies, power_LS_full,
@@ -612,10 +631,15 @@ def read_data_and_plot_LS(path_to_data = './',
                         y_zoomin = y_zoomin_2D_periodogram,
                         log_x_scale = log_x_scale,
                         T_search = T_search, T_name = T_title, add_extra_T = add_extra_T,
-                        vmin = vmin, vmax = vmax, cmap = cmap, savefig = savefig, filename = filename,
+                        vmin = vmin, vmax = vmax,
+                        vmin_auto_percentile_value = vmin_auto_percentile_value,
+                        cmap = cmap, savefig = savefig, filename = filename,
                         vline = vline,
                         color_vline = color_vline)
-    return(frequency_LS, frequencies, power_LS_full)
+    if add_p_values:
+        return(frequency_LS, frequencies, power_LS_full, confidence_level_full)
+    else:
+        return(frequency_LS, frequencies, power_LS_full)
     
 
 
@@ -1167,7 +1191,8 @@ def calculate_and_plot_SNR_LS_periodogram_over_time(time_datetime_beam_ON, frequ
                                                 stokes = 'V/I',
                                                 extra_panel_data = None,
                                                 extra_panel_ytitle = None,
-                                                figsize = None):
+                                                figsize = None,
+                                                T1 = None, T2 = None, nout=100000, T_lin = False):
     
                  # add_extra_T needs to be a dictionnary like: {T_value: float, T_name: string}/
     #     e.g., add_extra_T = {
@@ -1259,7 +1284,8 @@ def calculate_and_plot_SNR_LS_periodogram_over_time(time_datetime_beam_ON, frequ
 
             if time_window.size != 0:
                 # Calculate Lomb-Scargle power
-                frequency_LS, power_LS = calculate_LS_periodogram(time_window, data_window, exoplanet_period_in_hours)
+                frequency_LS, power_LS = calculate_LS_periodogram(time_window, data_window, exoplanet_period_in_hours,
+                                                                  T1 = T1, T2 = T2, nout=nout, T_lin = T_lin)
             
                 SNR_tmp =  numpy.nanstd(power_LS) 
                 SNR_LS = power_LS/SNR_tmp
@@ -1421,13 +1447,16 @@ def calculate_and_plot_SNR_LS_periodogram_over_time(time_datetime_beam_ON, frequ
 
 def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
                             T_search = 12.992/24, T_name = r'Io$_{syn}$',
-                            add_extra_T = None, x_zoomin = None, y_zoomin = None, vmin = None, vmax = None,
+                            add_extra_T = None, x_zoomin = None, y_zoomin = None,
+                            vmin = None, vmax = None,
+                            vmin_auto_percentile_value = 99.99,
                             log_x_scale = False,
                             cmap = 'inferno',
                             vline = False,
                             color_vline = None,
                             savefig = False, filename = 'SNR_LS_2D_periodogram.pdf',
-                            SNR_limit = None):
+                            SNR_limit = None,
+                            fontsize = 20):
 
     SNR_LS_2D = numpy.zeros(power_LS_2D.shape)
     for i_freq, freq in enumerate(frequencies):
@@ -1439,7 +1468,8 @@ def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
                     SNR_LS_2D[i_freq,:] = 0
             
     fig, ax = plt.subplots(figsize=(10, 6))
-
+    if vmin == "auto":
+        vmin = numpy.nanpercentile(SNR_LS_2D,vmin_auto_percentile_value)
     if vmin==None:
         vmin = numpy.nanmin(SNR_LS_2D)
     if vmax==None:
@@ -1453,8 +1483,9 @@ def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
                 levels=numpy.linspace(vmin,vmax,20),
                 extend='max', vmin=vmin, vmax=vmax,
                 zorder = 1)
-    plt.colorbar(im, ax=ax, label='SNR (LS)')
-
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('SNR (LS)', fontsize=fontsize)
+    cbar.ax.tick_params(labelsize=fontsize-2)
 
     if x_zoomin == None:
         x_min = numpy.min(1/frequency_LS/60/60)
@@ -1523,13 +1554,14 @@ def plot_SNR_LS_periodogram_2D(frequency_LS, frequencies, power_LS_2D,
     secax = ax.secondary_xaxis('top')
     secax.set_xticks(specific_periodicities)  # Set the tick positions
     secax.set_xticklabels([f'{p}' for p in specific_periodicities_name])  # Label the ticks (e.g., "1h", "5h", "10h")
-    secax.set_xlabel('Searched Periodicities (hours)')  # Label for the top axis
+    secax.set_xlabel('Searched Periodicities (hours)', fontsize = fontsize)  # Label for the top axis
 
-    ax.set_xlabel('Periodicities (hours)')
-    ax.set_ylabel('Frequency (MHz)')
+    ax.set_xlabel('Periodicities (hours)', fontsize = fontsize)
+    ax.set_ylabel('Frequency (MHz)', fontsize = fontsize)
+    ax.tick_params(axis='both', which='major', labelsize=fontsize)
 
     if savefig:
-        plt.savefig(filename, format='png', transparent = True, dpi=500)
+        plt.savefig(filename, format='pdf', transparent = True, dpi=500)
     else:
         plt.show()
 
